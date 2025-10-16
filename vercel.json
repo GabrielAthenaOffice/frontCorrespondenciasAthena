@@ -13,6 +13,10 @@
     {
       "source": "/api/aditivos/:path*",
       "destination": "https://api-aditivo-production-ed80.up.railway.app/aditivos/:path*"
+    },
+    {
+      "source": "/api/correspondencias/:path*", 
+      "destination": "https://correspondencias-backend-production.up.railway.app/api/correspondencias/:path*"
     }
   ]
 }

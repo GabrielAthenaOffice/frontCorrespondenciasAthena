@@ -20,8 +20,9 @@ export interface CorrespondenciaDTO {
   dataRecebimento: string; // "YYYY-MM-DD" (string)
   dataAvisoConexa: string | null; // "YYYY-MM-DD" ou null
   fotoCorrespondencia: string | null; // base64 ou url, ou null
-  // Remover campos extras, manter apenas os originais
+  anexos?: string[];
 }
+
 
 export const CorrespondenceManager: React.FC = () => {
   // Estado local baseado na API real
@@ -31,27 +32,35 @@ export const CorrespondenceManager: React.FC = () => {
   const [pageNumber, setPageNumber] = useState<number>(0);
   const [pageSize] = useState<number>(50);
   const [totalPages, setTotalPages] = useState<number>(0);
+  
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CorrespondenciaDTO | null>(null);
 
   const [formData, setFormData] = useState<{
-    fotoCorrespondencia: string | null; // um único arquivo
-    nomeEmpresaConexa: string;
-    remetente: string;
-    situacao?: string;
-    mensagem?: string;
+  arquivos?: File[];
+  fotoCorrespondencia: string | null;
+  nomeEmpresaConexa: string;
+  remetente: string;
+  situacao?: string;
+  mensagem?: string;
   }>({
-    fotoCorrespondencia: null,
-    nomeEmpresaConexa: '',
-    remetente: '',
-    situacao: '',
-    mensagem: '',
+  arquivos: [],
+  fotoCorrespondencia: null,
+  nomeEmpresaConexa: '',
+  remetente: '',
+  situacao: '',
+  mensagem: '',
   });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | StatusCorresp>('');
   // Remover estados de edição inline de situação/mensagem
+
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [createdData, setCreatedData] = useState<any>(null);
+
+
 
   const carregar = async () => {
     setCarregando(true);
@@ -74,6 +83,7 @@ export const CorrespondenceManager: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
+      arquivos: [],
       fotoCorrespondencia: null,
       nomeEmpresaConexa: '',
       remetente: '',
@@ -82,104 +92,77 @@ export const CorrespondenceManager: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
-      if (editing) {
-        // Atualizar correspondência existente via serviço (centralizado)
-        console.debug('[CorrespondenceManager] atualizando correspondência id=', editing.id);
-        const payload: any = {
+      let created: any = null;
+
+      // Criação sem arquivos
+      const respCriar = await fetch(`${API_BASE}/api/correspondencias/processar-correspondencia`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           nomeEmpresaConexa: formData.nomeEmpresaConexa,
           remetente: formData.remetente,
-        };
-        if (formData.fotoCorrespondencia) payload.fotoCorrespondencia = formData.fotoCorrespondencia;
-        if (formData.situacao) payload.situacao = formData.situacao;
-        if (formData.mensagem) payload.mensagem = formData.mensagem;
+          situacao: formData.situacao,
+          mensagem: formData.mensagem,
+        }),
+      });
 
-        const updated = await atualizarCorrespondencia(editing.id, payload);
-        // Atualiza lista local
-        setLista(prev => prev.map(p => (p.id === updated.id ? updated : p)));
-  // Disparar evento com detalhe para que outros componentes (ex: CompanyManager/DataContext) atualizem
-  console.debug('[CorrespondenceManager] dispatch empresaAtualizada após atualização');
-  window.dispatchEvent(new CustomEvent('empresaAtualizada', { detail: { entidade: 'Correspondencia', acao: 'ATUALIZAR', id: updated.id } }));
-        await carregar();
-        resetForm();
-        setShowForm(false);
-        return;
-      }
-
-      if (formData.fotoCorrespondencia) {
-        // Se houver foto, enviar como multipart para /processar-correspondencia/receber-com-foto
-        const form = new FormData();
-        form.append('nomeEmpresa', formData.nomeEmpresaConexa);
-        form.append('remetente', formData.remetente);
-
-        // Converter base64 para arquivo Blob
-        const base64 = formData.fotoCorrespondencia;
-        const arr = base64.split(',');
-        const mimeMatch = arr[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
+      if (respCriar.ok) {
+        try {
+          created = await respCriar.json();
+        } catch {
+          /* ignore */
         }
-        const file = new File([u8arr], 'foto.png', { type: mime });
-        form.append('foto', file);
-
-        const respFoto = await fetch(`${API_BASE}/api/correspondencias/processar-correspondencia/receber-com-foto`, {
-          method: 'POST',
-          body: form,
-        });
-        let createdFoto: any = null;
-        if (respFoto.ok) {
-          try { createdFoto = await respFoto.json(); } catch { /* ignore */ }
-        } else {
-          const errorText = await respFoto.text().catch(() => 'Unknown error');
-          console.error(`[CorrespondenceManager] Error creating correspondence with photo - HTTP ${respFoto.status}: ${errorText}`);
-          throw new Error(`Erro ao processar correspondência com foto (${respFoto.status})`);
-        }
-        // Disparar evento para notificar que uma empresa pode ter sido criada/atualizada
-        console.debug('[CorrespondenceManager] dispatch empresaAtualizada (com foto)');
-        window.dispatchEvent(new CustomEvent('empresaAtualizada', { detail: { entidade: 'Correspondencia', acao: 'CRIAR', id: createdFoto?.id } }));
       } else {
-        // Sem foto, enviar como JSON para /processar-correspondencia
-        const respCriar = await fetch(`${API_BASE}/api/correspondencias/processar-correspondencia`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nomeEmpresaConexa: formData.nomeEmpresaConexa,
-            remetente: formData.remetente,
-          }),
-        });
-        let created: any = null;
-        if (respCriar.ok) {
-          try { created = await respCriar.json(); } catch { /* ignore */ }
-        } else {
-          const errorText = await respCriar.text().catch(() => 'Unknown error');
-          console.error(`[CorrespondenceManager] Error creating correspondence - HTTP ${respCriar.status}: ${errorText}`);
-          throw new Error(`Erro ao processar correspondência (${respCriar.status})`);
-        }
-        console.debug('[CorrespondenceManager] dispatch empresaAtualizada (sem foto)');
-        window.dispatchEvent(new CustomEvent('empresaAtualizada', { detail: { entidade: 'Correspondencia', acao: 'CRIAR', id: created?.id } }));
+        const errorText = await respCriar.text().catch(() => 'Unknown error');
+        console.error(`[CorrespondenceManager] Error creating correspondence - HTTP ${respCriar.status}: ${errorText}`);
+        throw new Error(`Erro ao processar correspondência (${respCriar.status})`);
       }
-      await carregar();
-      resetForm();
-      setShowForm(false);
+
+      // 🔍 Buscar empresa pelo nome para obter email
+      try {
+        const resp = await fetch(`${API_BASE}/api/empresas/conexa/buscar-por-nome?nome=${encodeURIComponent(created.nomeEmpresaConexa)}`);
+        if (resp.ok) {
+          const empresas = await resp.json();
+          if (empresas && empresas.length > 0) {
+            const empresa = empresas[0];
+            setCreatedData({
+              ...created,
+              email: empresa.email,
+              nomeEmpresaConexa: empresa.nomeEmpresa,
+            });
+          } else {
+            console.warn('Nenhuma empresa encontrada pelo nome informado');
+            setCreatedData(created);
+          }
+        } else {
+          console.error('Falha ao buscar empresa:', resp.status);
+          setCreatedData(created);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar empresa por nome:', err);
+        setCreatedData(created);
+      }
+
+      setShowActionModal(true);
     } catch (error: any) {
       setErro(error?.message || 'Erro ao cadastrar correspondência');
     }
   };
 
-  const handleEdit = (c: CorrespondenciaDTO) => {
-    setEditing(c);
-    setFormData({
-      fotoCorrespondencia: c.fotoCorrespondencia ?? null,
-      nomeEmpresaConexa: c.nomeEmpresaConexa ?? '',
-      remetente: c.remetente ?? '',
-    });
-    setShowForm(true);
-  };
+
+  const handleEdit = (corresp: CorrespondenciaDTO) => {
+  setEditing(corresp);
+  setShowForm(true);
+  setFormData({
+    arquivos: [], // Não traz arquivos antigos, pois não é possível reanexar arquivos já enviados
+    fotoCorrespondencia: corresp.fotoCorrespondencia || null,
+    nomeEmpresaConexa: corresp.nomeEmpresaConexa || '',
+    remetente: corresp.remetente || '',
+    situacao: '', // ou corresp.situacao se existir no DTO
+    mensagem: '', // ou corresp.mensagem se existir no DTO
+  });
+};
 
   // Remover funções de edição inline de situação/mensagem
 
@@ -292,6 +275,7 @@ export const CorrespondenceManager: React.FC = () => {
                 </div>
               </div>
 
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Foto/Logo (opcional)</label>
                 <div className="flex items-center gap-3">
@@ -306,16 +290,16 @@ export const CorrespondenceManager: React.FC = () => {
                   <label className="inline-flex items-center cursor-pointer gap-2">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept=".pdf,image/*"
+                      multiple 
                       style={{ display: 'none' }}
                       onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = ev => {
-                            setFormData(prev => ({ ...prev, fotoCorrespondencia: (ev.target?.result as string) ?? null }));
-                          };
-                          reader.readAsDataURL(file);
+                        const files = e.target.files;
+                        if (files) {
+                          setFormData(prev => ({
+                          ...prev,
+                          arquivos: Array.from(files), // novo campo para múltiplos arquivos
+                          }));  
                         }
                       }}
                     />
@@ -324,6 +308,24 @@ export const CorrespondenceManager: React.FC = () => {
                   </label>
                 </div>
               </div>
+              
+              {(formData.arquivos ?? []).length > 0 && (
+              <ul className="text-xs text-gray-300 space-y-1">
+                {(formData.arquivos ?? []).map((f, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    {f.name}
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        arquivos: (prev.arquivos ?? []).filter((_, idx) => idx !== i)
+                      }))}
+                      className="text-red-400 hover:text-red-300"
+                    >remover</button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
@@ -344,6 +346,89 @@ export const CorrespondenceManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {showActionModal && createdData && (
+  <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
+    <div className="bg-[#23272f] rounded-xl shadow-xl p-6 w-80 space-y-4">
+      <h3 className="text-lg font-semibold text-white text-center">O que deseja fazer?</h3>
+
+      <button
+        onClick={async () => {
+          await fetch(`${API_BASE}/api/correspondencias/enviar-aviso-resend`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // <== adiciona isso
+            body: JSON.stringify({
+              emailDestino: createdData?.email || '',
+              nomeEmpresaConexa: createdData?.nomeEmpresaConexa || '',
+              anexos: false,
+              anexosUrls: [],
+            }),
+          });
+          setShowActionModal(false);
+          await carregar();
+          resetForm();
+          setShowForm(false);
+        }}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
+      >
+        Enviar aviso (sem anexo)
+      </button>
+
+      <button
+        onClick={() => {
+          setShowActionModal(false);
+          carregar();
+          resetForm();
+          setShowForm(false);
+        }}
+        className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg"
+      >
+        Salvar correspondência
+      </button>
+
+      <button
+          onClick={async () => {
+            try {
+              const form = new FormData();
+              
+              // ⚠️ Adiciona o nome da empresa — obrigatório no backend
+              form.append('nomeEmpresa', createdData?.nomeEmpresaConexa || '');
+
+              if (formData.arquivos && formData.arquivos.length > 0) {
+                formData.arquivos.forEach((file) => form.append('arquivos', file));
+              }
+
+              const resp = await fetch(`${API_BASE}/api/correspondencias/${createdData.id}/enviar-aviso-resend-upload`, {
+                method: 'POST',
+                body: form,
+                credentials: 'include', // <== adiciona isso
+              });
+
+              if (!resp.ok) {
+                const msg = await resp.text();
+                console.error('Falha ao enviar aviso com anexo:', msg);
+                alert(`Erro: ${msg}`);
+              } else {
+                console.log('Aviso enviado com sucesso');
+              }
+
+              setShowActionModal(false);
+              await carregar();
+              resetForm();
+              setShowForm(false);
+            } catch (err) {
+              console.error('Erro no envio com anexo:', err);
+            }
+          }}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+        >
+          Enviar aviso (com anexo)
+        </button>
+            </div>
+          </div>
+        )}
+
 
       {/* Lista */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -374,7 +459,7 @@ export const CorrespondenceManager: React.FC = () => {
                       {(() => {
                         try {
                           const d = new Date(c.dataRecebimento);
-                          return isNaN(d.getTime()) ? c.dataRecebimento : d.toLocaleDateString('pt-BR');
+                          return isNaN(d.getTime()) ? c.dataRecebimento : d.toLocaleString('pt-BR', { timeZone: 'America/Recife' });
                         } catch {
                           return c.dataRecebimento;
                         }

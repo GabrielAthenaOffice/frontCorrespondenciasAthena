@@ -12,18 +12,16 @@ export default defineConfig({
     host: true,
     hmr: { port: 5173 },
     proxy: {
-      // Proxy para API do Aditivo → evita CORS no ambiente local
-      '/api-aditivo': {
-        target: 'https://api-aditivo-production-ed80.up.railway.app',
+      '/api/aditivos': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api-aditivo/, ''),
+        rewrite: (path) => path.replace(/^\/api\/aditivos/, '/aditivos'),
       },
-      // (opcional) se quiser, pode adicionar também a de correspondências:
-      '/api-correspondencias': {
-        target: 'https://correspondencias-backend-production.up.railway.app',
+      '/api/correspondencias': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api-correspondencias/, ''),
+        rewrite: (path) => path.replace(/^\/api\/correspondencias/, '/api/correspondencias'),
       },
-    },
+    }
   },
 });

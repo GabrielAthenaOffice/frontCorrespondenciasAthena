@@ -5,6 +5,8 @@ import { buscarTodasEmpresas, alterarSituacaoEmpresa } from '../service/empresa'
 import { criarAditivo, baixarDocumentoAditivo } from '../service/aditivo';
 import { formatTelefone } from '../service/empresa';
 import { formatCpf, formatCnpj } from '../service/empresa';
+import { Trash2 } from 'lucide-react';
+import { API_BASE } from '../service/api';
 
 
 
@@ -133,7 +135,13 @@ export const CompanyManager: React.FC = () => {
     setAditivoForm(prev => ({ ...prev, [campo]: valor }));
   };
 
-  
+  function formatCpfOuCnpj(valor: string | null | undefined): string {
+  if (!valor) return '-';
+  const digits = valor.replace(/\D/g, '');
+  if (digits.length === 11) return formatCpf(digits);
+  if (digits.length === 14) return formatCnpj(digits);
+  return valor;
+} 
 
   const handleSubmitAditivo = async (evento: React.FormEvent) => {
   evento.preventDefault();
@@ -196,6 +204,17 @@ export const CompanyManager: React.FC = () => {
   } finally {
     setCriandoAditivo(false);
     setStatusAditivo(null);
+  }
+};
+
+const deletarEmpresa = async (id: number) => {
+  try {
+    // Chame o endpoint de deleção
+    await fetch(`${API_BASE}/api/empresas/${id}`, { method: 'DELETE' });
+    // Atualize a lista local
+    setEmpresas(prev => prev.filter(e => e.id !== id));
+  } catch (err) {
+    alert('Erro ao deletar empresa');
   }
 };
 
@@ -279,15 +298,29 @@ export const CompanyManager: React.FC = () => {
             console.log('Renderizando empresa:', company);
             const isAthena = company.id !== undefined;
             return (
-              <div key={company.customerId || company.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div key={company.customerId || company.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
                 <div className="flex flex-col gap-2">
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    {company.nomeEmpresa || '-'}
-                  </h3>
-                  <p className="text-sm text-gray-600 truncate">CNPJ: {company.cnpj || '-'}</p>
-                  <p className="text-sm text-gray-600 truncate">Email: {Array.isArray(company.email) ? company.email[0] : (company.email || '-')}</p>
-                  <p className="text-sm text-gray-600 truncate">Telefone: {formatTelefone(company.telefone)}</p>
-                  <p className="text-sm text-gray-600 truncate">Status: {company.statusEmpresa ?? '-'}</p>
+                  {/* Cabeçalho com nome e lixeira */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900 truncate">{company.nomeEmpresa || '-'}</span>
+                    <button
+                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      title="Deletar empresa"
+                      onClick={() => {
+                        if (window.confirm('Tem certeza que deseja deletar esta empresa?')) {
+                          // Chame sua função de deletar aqui, ex: deletarEmpresa(company.id)
+                          deletarEmpresa(company.id);
+                        }
+                      }}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                      {/* Conteúdo do card */}
+                      <p className="text-sm text-gray-600 truncate">CNPJ/CPF: {formatCpfOuCnpj(company.cnpj) || '-'}</p>
+                      <p className="text-sm text-gray-600 truncate">Email: {Array.isArray(company.email) ? company.email[0] : (company.email || '-')}</p>
+                      <p className="text-sm text-gray-600 truncate">Telefone: {formatTelefone(company.telefone)}</p>
+                      <p className="text-sm text-gray-600 truncate">Status: {company.statusEmpresa ?? '-'}</p>
                   {/* Situação */}
                   <div className="flex items-center gap-2 mt-2">
                     <label className="text-sm font-medium text-gray-700">Situação:</label>
@@ -372,16 +405,17 @@ export const CompanyManager: React.FC = () => {
                   </div>
 
                   {company.situacao === 'CPF' && (
-                    <div className="mt-2">
+                    <div className="mt-4 text-center">
                       <button
                         className="px-3 py-1.5 bg-purple-600 text-white rounded"
                         onClick={() => abrirModalAditivo(company)}
                       >
-                        Aditivo Contratual
+                        Criar Aditivo
                       </button>
                     </div>
                   )}
                 </div>
+              
               </div>
             );
           })

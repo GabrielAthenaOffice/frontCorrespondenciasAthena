@@ -76,16 +76,9 @@ export async function criarAditivo(
 
     // usa a url absoluta enviada pelo backend; fallback monta /download (NUNCA /baixar)
     const id = result.aditivoId || result.id || '';
-    const urlDownload = ensureAbsoluteDownloadUrl(
-    result.urlDownload || result.url || result.download_url,
-    id
-    );
-
-    /*const urlDownload: string =
-      result.urlDownload ||
-      (id
-        ? `https://api-aditivo-production-ed80.up.railway.app/aditivos/${id}/download`
-        : '');*/
+    const urlDownload = id
+    ? `https://api-aditivo-production-ed80.up.railway.app/aditivos/${id}/download`
+    : '';
 
     return {
     id,
@@ -165,4 +158,3 @@ function ensureAbsoluteDownloadUrl(u?: string, id?: string) {
   console.log('[ensureAbsoluteDownloadUrl] normalizada:', full);
   return full;
 }
-
