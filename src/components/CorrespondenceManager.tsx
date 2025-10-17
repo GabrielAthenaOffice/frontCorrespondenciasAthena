@@ -128,8 +128,8 @@ export const CorrespondenceManager: React.FC = () => {
             const empresa = empresas[0];
             setCreatedData({
               ...created,
-              email: empresa.email,
-              nomeEmpresaConexa: empresa.nomeEmpresa,
+              email: Array.isArray(empresa.email) ? empresa.email[0] : empresa.email || '',
+              nomeEmpresaConexa: created.nomeEmpresaConexa || empresa.nomeEmpresa || '',
             });
           } else {
             console.warn('Nenhuma empresa encontrada pelo nome informado');
@@ -143,7 +143,10 @@ export const CorrespondenceManager: React.FC = () => {
         console.error('Erro ao buscar empresa por nome:', err);
         setCreatedData(created);
       }
-
+      
+      if (!created.nomeEmpresaConexa) {
+        console.warn("⚠️ Backend não retornou nomeEmpresaConexa no created. Verifique resposta de /processar-correspondencia");
+      }
       setShowActionModal(true);
     } catch (error: any) {
       setErro(error?.message || 'Erro ao cadastrar correspondência');
@@ -276,56 +279,76 @@ export const CorrespondenceManager: React.FC = () => {
               </div>
 
 
+              {/* === NOVO BLOCO DE ANEXOS === */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Foto/Logo (opcional)</label>
-                <div className="flex items-center gap-3">
-                  {formData.fotoCorrespondencia && (
-                    // preview básico
-                    <img
-                      src={formData.fotoCorrespondencia}
-                      alt="Preview"
-                      className="w-16 h-16 object-cover rounded-lg border border-gray-700"
-                    />
-                  )}
-                  <label className="inline-flex items-center cursor-pointer gap-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">Anexos (imagens ou PDFs)</label>
+                <div className="flex flex-col gap-3">
+                  <label className="inline-flex items-center cursor-pointer gap-2 w-fit">
                     <input
                       type="file"
                       accept=".pdf,image/*"
-                      multiple 
+                      multiple
                       style={{ display: 'none' }}
                       onChange={e => {
                         const files = e.target.files;
                         if (files) {
                           setFormData(prev => ({
-                          ...prev,
-                          arquivos: Array.from(files), // novo campo para múltiplos arquivos
-                          }));  
+                            ...prev,
+                            arquivos: [...(prev.arquivos || []), ...Array.from(files)],
+                          }));
                         }
                       }}
                     />
                     <ImageIcon className="w-4 h-4 text-gray-300" />
-                    <span className="px-3 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors text-sm">Anexar</span>
+                    <span className="px-3 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                      Anexar
+                    </span>
                   </label>
+
+                  {formData.arquivos && formData.arquivos.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3">
+                      {formData.arquivos.map((file, index) => {
+                        const isImage = file.type.startsWith('image/');
+                        const fileURL = URL.createObjectURL(file);
+                        return (
+                          <div
+                            key={index}
+                            className="relative border border-gray-700 rounded-lg p-2 flex flex-col items-center justify-center text-center text-xs bg-[#2c2f38]"
+                          >
+                            {isImage ? (
+                              <img
+                                src={fileURL}
+                                alt={file.name}
+                                className="w-20 h-20 object-cover rounded-md mb-1"
+                              />
+                            ) : (
+                              <div className="w-20 h-20 flex items-center justify-center bg-gray-800 rounded-md text-gray-300">
+                                PDF
+                              </div>
+                            )}
+                            <span className="truncate max-w-[80px] text-gray-300">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormData(prev => ({
+                                  ...prev,
+                                  arquivos: (prev.arquivos || []).filter((_, i) => i !== index),
+                                }))
+                              }
+                              className="absolute top-1 right-1 text-red-400 hover:text-red-300 text-xs"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
+              {/* ============================= */}
               
-              {(formData.arquivos ?? []).length > 0 && (
-              <ul className="text-xs text-gray-300 space-y-1">
-                {(formData.arquivos ?? []).map((f, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    {f.name}
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({
-                        ...prev,
-                        arquivos: (prev.arquivos ?? []).filter((_, idx) => idx !== i)
-                      }))}
-                      className="text-red-400 hover:text-red-300"
-                    >remover</button>
-                  </li>
-                ))}
-              </ul>
-            )}
+              
 
               <div className="flex justify-end gap-3 pt-4">
                 <button
@@ -354,12 +377,17 @@ export const CorrespondenceManager: React.FC = () => {
 
       <button
         onClick={async () => {
+          console.log('Enviando para backend:', {
+          emailDestino: createdData?.email,
+          nomeEmpresaConexa: createdData?.nomeEmpresaConexa,
+          });
+
           await fetch(`${API_BASE}/api/correspondencias/enviar-aviso-resend`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include', // <== adiciona isso
             body: JSON.stringify({
-              emailDestino: createdData?.email || '',
+             // emailDestino: createdData?.email || '',
               nomeEmpresaConexa: createdData?.nomeEmpresaConexa || '',
               anexos: false,
               anexosUrls: [],
@@ -391,26 +419,31 @@ export const CorrespondenceManager: React.FC = () => {
           onClick={async () => {
             try {
               const form = new FormData();
-              
-              // ⚠️ Adiciona o nome da empresa — obrigatório no backend
-              form.append('nomeEmpresa', createdData?.nomeEmpresaConexa || '');
 
+              // Adiciona cada arquivo com o nome que o backend espera
               if (formData.arquivos && formData.arquivos.length > 0) {
-                formData.arquivos.forEach((file) => form.append('arquivos', file));
+                formData.arquivos.forEach(file => {
+                  console.log('📎 Adicionando arquivo:', file.name);
+                  form.append('arquivos', file);
+                });
+              }
+
+              for (let [key, val] of form.entries()) {
+                    console.log('🧩', key, val);
               }
 
               const resp = await fetch(`${API_BASE}/api/correspondencias/${createdData.id}/enviar-aviso-resend-upload`, {
                 method: 'POST',
                 body: form,
-                credentials: 'include', // <== adiciona isso
+                credentials: 'include',
               });
 
               if (!resp.ok) {
                 const msg = await resp.text();
-                console.error('Falha ao enviar aviso com anexo:', msg);
+                console.error('❌ Falha ao enviar aviso com anexo:', msg);
                 alert(`Erro: ${msg}`);
               } else {
-                console.log('Aviso enviado com sucesso');
+                console.log('✅ Aviso enviado com sucesso (com anexos)');
               }
 
               setShowActionModal(false);
@@ -418,13 +451,14 @@ export const CorrespondenceManager: React.FC = () => {
               resetForm();
               setShowForm(false);
             } catch (err) {
-              console.error('Erro no envio com anexo:', err);
+              console.error('💥 Erro no envio com anexo:', err);
             }
           }}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
         >
           Enviar aviso (com anexo)
         </button>
+
             </div>
           </div>
         )}
