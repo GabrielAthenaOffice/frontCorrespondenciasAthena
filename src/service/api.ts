@@ -2,7 +2,7 @@
 export const API_BASE: string =
   import.meta.env.VITE_API_BASE ||
   import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:8080'; // 🔥 precisa do http://
+  'https://correspondencias-backend.onrender.com'; // 🔥 precisa do http://
 
 console.log('🔗 API_BASE configurado para:', API_BASE);
 console.log('🔧 Variáveis carregadas:', {
