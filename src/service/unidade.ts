@@ -1,4 +1,4 @@
-import { API_BASE } from './api';
+import { apiFetch } from './api';
 
 export interface UnidadeInfo {
   unidadeNome: string;
@@ -6,11 +6,14 @@ export interface UnidadeInfo {
   unidadeEndereco: string;
 }
 
-const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === 'string');
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string');
 
 export async function listarUnidades(): Promise<string[]> {
-  const response = await fetch(`${API_BASE}/unidades`);
+  const response = await apiFetch('/unidades');
   if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error(`[listarUnidades] HTTP ${response.status}: ${text}`);
     throw new Error('Não foi possível carregar as unidades');
   }
 
@@ -26,13 +29,15 @@ export async function listarUnidades(): Promise<string[]> {
 export async function buscarUnidade(nome: string): Promise<UnidadeInfo | null> {
   if (!nome) return null;
 
-  const response = await fetch(`${API_BASE}/unidades/${encodeURIComponent(nome)}`);
+  const response = await apiFetch(`/unidades/${encodeURIComponent(nome)}`);
 
   if (response.status === 404) {
     return null;
   }
 
   if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    console.error(`[buscarUnidade] HTTP ${response.status}: ${text}`);
     throw new Error('Erro ao buscar detalhes da unidade');
   }
 
@@ -43,4 +48,4 @@ export async function buscarUnidade(nome: string): Promise<UnidadeInfo | null> {
     unidadeCnpj: typeof data?.unidadeCnpj === 'string' ? data.unidadeCnpj : '',
     unidadeEndereco: typeof data?.unidadeEndereco === 'string' ? data.unidadeEndereco : '',
   };
-} 
+}

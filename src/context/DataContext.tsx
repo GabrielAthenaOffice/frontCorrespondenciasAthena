@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE } from '../service/api';
 import { Company, Correspondence, AuditLog } from '../types';
+import { apiFetch } from '../service/api';
 
 interface DataContextType {
   companies: Company[];
@@ -52,38 +53,42 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, []);
 
   // function to load a specific audit page (used by UI)
-  const loadAuditPage = async (pageNumber: number) => {
-    try {
-  const resp = await fetch(`${API_BASE}/api/historicos/todos-processos?pageNumber=${pageNumber}&pageSize=${auditPageSize}&sortBy=dataHora&sortOrder=desc`);
-      if (!resp.ok) throw new Error('Erro ao buscar histórico');
-      const body = await resp.json();
-      const items = body.content || [];
+ const loadAuditPage = async (pageNumber: number) => {
+  try {
+    const resp = await apiFetch(
+      `/api/historicos/todos-processos?pageNumber=${pageNumber}&pageSize=${auditPageSize}&sortBy=dataHora&sortOrder=desc`
+    );
 
-      // Normalize action strings to canonical actions (CRIAR, ATUALIZAR, EXCLUIR)
-      const normalizeAction = (raw: string | undefined, detalhe: string | undefined) => {
-        const text = ((raw || '') + ' ' + (detalhe || '')).toLowerCase();
-        if (text.includes('exclu') || text.includes('remov') || text.includes('delet')) return 'EXCLUIR';
-        if (text.includes('atualiz') || text.includes('alterad') || text.includes('status alterad') || text.includes('status/situ')) return 'ATUALIZAR';
-        if (text.includes('criad') || text.includes('criou') || text.includes('recebimento') || text.includes('recebido') || text.includes('empresa criada') || text.includes('recebimento de correspondência')) return 'CRIAR';
-        // fallback: if the raw equals a canonical action already
-        if ((raw || '').toUpperCase() === 'CRIAR' || (raw || '').toUpperCase() === 'ATUALIZAR' || (raw || '').toUpperCase() === 'EXCLUIR') return (raw || '').toUpperCase();
-        return raw || 'OUTRA';
-      };
+    if (!resp.ok) throw new Error(`Erro ao buscar histórico (${resp.status})`);
 
-      const normalized = items.map((log: any) => ({
-        ...log,
-        dataHora: new Date(log.dataHora),
-        acaoRealizada: normalizeAction(log.acaoRealizada, log.detalhe),
-        entidade: (log.entidade || '').toUpperCase(),
-      }));
+    const body = await resp.json();
+    const items = body.content || [];
 
-      setAuditLogs(normalized);
-      setAuditPageNumber(body.pageNumber ?? pageNumber);
-      setAuditTotalPages(body.totalPages ?? 0);
-    } catch (e) {
-      console.error('Erro ao carregar página do histórico', e);
-    }
-  };
+    const normalizeAction = (raw: string | undefined, detalhe: string | undefined) => {
+      const text = ((raw || '') + ' ' + (detalhe || '')).toLowerCase();
+      if (text.includes('exclu') || text.includes('remov') || text.includes('delet')) return 'EXCLUIR';
+      if (text.includes('atualiz') || text.includes('alterad') || text.includes('status')) return 'ATUALIZAR';
+      if (text.includes('criad') || text.includes('recebimento') || text.includes('empresa criada')) return 'CRIAR';
+      if ((raw || '').toUpperCase() === 'CRIAR' || (raw || '').toUpperCase() === 'ATUALIZAR' || (raw || '').toUpperCase() === 'EXCLUIR')
+        return (raw || '').toUpperCase();
+      return raw || 'OUTRA';
+    };
+
+    const normalized = items.map((log: any) => ({
+      ...log,
+      dataHora: new Date(log.dataHora),
+      acaoRealizada: normalizeAction(log.acaoRealizada, log.detalhe),
+      entidade: (log.entidade || '').toUpperCase(),
+    }));
+
+    setAuditLogs(normalized);
+    setAuditPageNumber(body.pageNumber ?? pageNumber);
+    setAuditTotalPages(body.totalPages ?? 0);
+  } catch (e) {
+    console.error('Erro ao carregar página do histórico', e);
+  }
+};
+
 
   // Ouve evento global disparado quando uma empresa pode ter sido criada/atualizada
   useEffect(() => {

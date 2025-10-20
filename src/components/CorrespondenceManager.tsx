@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { apagarCorrespondencia, buscarCorrespondencias, atualizarCorrespondencia } from '../service/correspondencia';
 import { API_BASE } from '../service/api';
+import { apiFetch } from '../service/api';
+
 
 // Tipos do novo schema
 export type StatusCorresp = 'AVISADA' | 'DEVOLVIDA' | 'USO_INDEVIDO' | 'ANALISE';
@@ -96,7 +98,7 @@ export const CorrespondenceManager: React.FC = () => {
       let created: any = null;
 
       // Criação sem arquivos
-      const respCriar = await fetch(`${API_BASE}/api/correspondencias/processar-correspondencia`, {
+      const respCriar = await apiFetch('/api/correspondencias/processar-correspondencia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -121,7 +123,7 @@ export const CorrespondenceManager: React.FC = () => {
 
       // 🔍 Buscar empresa pelo nome para obter email
       try {
-        const resp = await fetch(`${API_BASE}/api/empresas/conexa/buscar-por-nome?nome=${encodeURIComponent(created.nomeEmpresaConexa)}`);
+        const resp = await apiFetch(`/api/empresas/conexa/buscar-por-nome?nome=${encodeURIComponent(created.nomeEmpresaConexa)}`);
         if (resp.ok) {
           const empresas = await resp.json();
           if (empresas && empresas.length > 0) {
@@ -382,7 +384,7 @@ export const CorrespondenceManager: React.FC = () => {
           nomeEmpresaConexa: createdData?.nomeEmpresaConexa,
           });
 
-          await fetch(`${API_BASE}/api/correspondencias/enviar-aviso-resend`, {
+          await apiFetch('/api/correspondencias/enviar-aviso-resend', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include', // <== adiciona isso
@@ -432,10 +434,9 @@ export const CorrespondenceManager: React.FC = () => {
                     console.log('🧩', key, val);
               }
 
-              const resp = await fetch(`${API_BASE}/api/correspondencias/${createdData.id}/enviar-aviso-resend-upload`, {
+              const resp = await apiFetch(`/api/correspondencias/${createdData.id}/enviar-aviso-resend-upload`,  {
                 method: 'POST',
                 body: form,
-                credentials: 'include',
               });
 
               if (!resp.ok) {

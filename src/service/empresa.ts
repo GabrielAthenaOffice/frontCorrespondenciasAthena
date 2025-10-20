@@ -1,5 +1,7 @@
 // Base da API centralizada
 import { API_BASE } from './api';
+import { apiFetch } from '../service/api';
+
 
 type RawCompanyPayload = Record<string, unknown>;
 
@@ -251,8 +253,8 @@ const isConexaPage = (value: unknown): value is ConexaPagePayload => {
 
 export async function buscarEmpresas(pageNumber: number = 0, pageSize: number = 50): Promise<CompanyPage> {
     try {
-        const athenaUrl = `${API_BASE}/api/empresas/athena/buscar-todos-registros?pageNumber=${pageNumber}&pageSize=${pageSize}`;
-        const resp = await fetch(athenaUrl);
+        const athenaUrl = `/api/empresas/athena/buscar-todos-registros?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+        const resp = await apiFetch(athenaUrl);
         if (!resp.ok) {
             const errorText = await resp.text().catch(() => 'Unknown error');
             console.warn(`[buscarEmpresas] ATHENA HTTP ${resp.status}: ${errorText}`);
@@ -269,8 +271,8 @@ export async function buscarEmpresas(pageNumber: number = 0, pageSize: number = 
             }
         }
 
-        const conexaUrl = `${API_BASE}/api/empresas/conexa/buscar-todos-registros?pageNumber=${pageNumber}&pageSize=${pageSize}`;
-        const resp2 = await fetch(conexaUrl);
+        const conexaUrl = `/api/empresas/conexa/buscar-todos-registros?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+        const resp2 = await apiFetch(conexaUrl);
         if (!resp2.ok) {
             const errorText = await resp2.text().catch(() => 'Unknown error');
             console.error(`[buscarEmpresas] CONEXA HTTP ${resp2.status}: ${errorText}`);
@@ -307,8 +309,8 @@ export async function alterarSituacaoEmpresa(
         if (novaSituacao) params.push(`novaSituacao=${novaSituacao}`);
         if (novaMensagem !== undefined) params.push(`novaMensagem=${encodeURIComponent(novaMensagem)}`);
         const query = params.length ? `?${params.join('&')}` : '';
-        const url = `${API_BASE}/api/empresas/athena/alterar-empresa/modelo-athena/${id}${query}`;
-        const response = await fetch(url, {
+        const url = `/api/empresas/athena/alterar-empresa/modelo-athena/${id}${query}`;
+        const response = await apiFetch(url, {
             method: 'PUT',
         });
         if (!response.ok) {
@@ -328,8 +330,8 @@ const fetchTodasEmpresasConexa = async (pageSize: number): Promise<CompanyPage> 
     let page = 0;
 
     while (true) {
-        const url = `${API_BASE}/api/empresas/conexa/buscar-todos-registros?pageNumber=${page}&pageSize=${pageSize}`;
-        const resp = await fetch(url);
+        const url = `/api/empresas/conexa/buscar-todos-registros?pageNumber=${page}&pageSize=${pageSize}`;
+        const resp = await apiFetch(url);
         if (!resp.ok) {
             const errorText = await resp.text().catch(() => 'Unknown error');
             console.warn(`[fetchTodasEmpresasConexa] HTTP ${resp.status} on page ${page}: ${errorText}`);
@@ -369,8 +371,8 @@ export async function buscarTodasEmpresas(pageSize: number = 50): Promise<Compan
         let page = 0;
 
         while (true) {
-            const url = `${API_BASE}/api/empresas/athena/buscar-todos-registros?pageNumber=${page}&pageSize=${pageSize}`;
-            const resp = await fetch(url);
+            const url = `/api/empresas/athena/buscar-todos-registros?pageNumber=${page}&pageSize=${pageSize}`;
+            const resp = await apiFetch(url);
             if (!resp.ok) {
                 const errorText = await resp.text().catch(() => 'Unknown error');
                 console.warn(`[buscarTodasEmpresas] ATHENA HTTP ${resp.status} on page ${page}: ${errorText}`);
