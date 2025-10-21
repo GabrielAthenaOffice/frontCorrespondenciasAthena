@@ -10,6 +10,7 @@ console.log('🔧 Variáveis carregadas:', {
   VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
 });
 
+
 // 🔥 helper central com credenciais sempre incluídas
 export async function apiFetch(
   path: string,
