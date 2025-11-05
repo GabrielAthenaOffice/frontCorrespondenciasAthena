@@ -1,3 +1,4 @@
+import { StatusCorresp } from '../components/CorrespondenceManager';
 import { apiFetch } from './api';
 
 export async function buscarCorrespondencias(pageNumber: number = 0, pageSize: number = 50) {
@@ -33,21 +34,40 @@ export async function apagarCorrespondencia(id: string | number) {
   }
 }
 
-export async function atualizarCorrespondencia(id: number | string, updates: any) {
+// service/correspondencia.ts - ATUALIZAR ESTA FUNÇÃO
+export async function atualizarStatusCorrespondencia(
+  id: number | string, 
+  status: StatusCorresp, 
+  motivo: string, 
+  alteradoPor: string
+) {
   try {
-    const response = await apiFetch(`/api/correspondencias/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
+    console.log(`[atualizarStatusCorrespondencia] Enviando PATCH para /api/correspondencias/${id}/status`);
+    console.log(`[atualizarStatusCorrespondencia] Payload:`, { status, motivo, alteradoPor });
+
+    const response = await apiFetch(`/api/correspondencias/${id}/status`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        status,
+        motivo,
+        alteradoPor
+      }),
     });
+    
+    console.log(`[atualizarStatusCorrespondencia] Response status:`, response.status);
+    
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(`[atualizarCorrespondencia] HTTP ${response.status}: ${errorText}`);
-      throw new Error(`Erro ao atualizar correspondência (${response.status})`);
+      console.error(`[atualizarStatusCorrespondencia] HTTP ${response.status}: ${errorText}`);
+      throw new Error(`Erro ao atualizar status (${response.status})`);
     }
+    
     return response.json();
   } catch (error) {
-    console.error('[atualizarCorrespondencia] Error:', error);
-    throw error instanceof Error ? error : new Error('Erro ao atualizar correspondência');
+    console.error('[atualizarStatusCorrespondencia] Error:', error);
+    throw error instanceof Error ? error : new Error('Erro ao atualizar status da correspondência');
   }
 }

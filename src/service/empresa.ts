@@ -414,3 +414,33 @@ export async function buscarTodasEmpresas(pageSize: number = 50): Promise<Compan
         throw error instanceof Error ? error : new Error('Erro ao buscar todas as empresas');
     }
 }
+
+
+export async function criarEmpresaPorNome(nomeEmpresa: string): Promise<any> {
+  try {
+    const response = await apiFetch('/api/empresas/criar-por-nome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nomeEmpresa }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`[criarEmpresaPorNome] HTTP ${response.status}: ${errorText}`);
+      
+      // Tratamento específico para códigos de status
+      if (response.status === 409) {
+        throw new Error('Empresa já cadastrada no sistema');
+      } else if (response.status === 404) {
+        throw new Error('Nenhuma empresa encontrada com esse nome');
+      } else {
+        throw new Error(`Erro ao criar empresa (${response.status})`);
+      }
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('[criarEmpresaPorNome] Error:', error);
+    throw error instanceof Error ? error : new Error('Erro ao criar empresa');
+  }
+}
