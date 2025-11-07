@@ -365,6 +365,17 @@ const fetchTodasEmpresasConexa = async (pageSize: number): Promise<CompanyPage> 
     return createAggregatedCompanyPage(companies, pageSize);
 };
 
+// Ajuda: lida com Optional do Spring no JSON
+function unwrapOptionalPayload<T = any>(payload: any): T | null {
+  if (payload == null) return null;
+  if (typeof payload === 'object') {
+    if ('value' in payload) return (payload as any).value ?? null;      // { value: {...} }
+    if ('present' in payload && payload.present === false) return null;  // { present:false }
+    if ('empty' in payload && payload.empty === true) return null;       // { empty:true }
+  }
+  return payload as T; // já é o objeto
+}
+
 export async function buscarTodasEmpresas(pageSize: number = 50): Promise<CompanyPage> {
     try {
         const companies: Company[] = [];
@@ -442,5 +453,43 @@ export async function criarEmpresaPorNome(nomeEmpresa: string): Promise<any> {
   } catch (error) {
     console.error('[criarEmpresaPorNome] Error:', error);
     throw error instanceof Error ? error : new Error('Erro ao criar empresa');
+  }
+}
+
+// service/empresa.ts - ADICIONAR ESTAS FUNÇÕES
+
+// Buscar empresa por ID (para detalhes)
+export async function buscarEmpresaPorId(id: number): Promise<Company | null> {
+  try {
+    const response = await apiFetch(`/api/empresas/athena/buscar-por-id/${id}`);
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Erro ao buscar empresa (${response.status}): ${errorText}`);
+    }
+    const raw = await response.json().catch(() => null);
+    const unwrapped = unwrapOptionalPayload(raw);
+    return unwrapped ? mapCustomerToCompany(unwrapped) : null;
+  } catch (error) {
+    console.error('[buscarEmpresaPorId] Error:', error);
+    throw error instanceof Error ? error : new Error('Erro ao buscar empresa');
+  }
+}
+
+// Buscar empresa por nome (para detalhes)
+export async function buscarEmpresaPorNome(nome: string): Promise<Company | null> {
+  try {
+    const response = await apiFetch(`/api/empresas/athena/buscar-por-nome?nome=${encodeURIComponent(nome)}`);
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Erro ao buscar empresa (${response.status}): ${errorText}`);
+    }
+    const raw = await response.json().catch(() => null);
+    const unwrapped = unwrapOptionalPayload(raw);
+    return unwrapped ? mapCustomerToCompany(unwrapped) : null;
+  } catch (error) {
+    console.error('[buscarEmpresaPorNome] Error:', error);
+    throw error instanceof Error ? error : new Error('Erro ao buscar empresa');
   }
 }
