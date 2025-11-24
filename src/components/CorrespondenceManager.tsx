@@ -207,13 +207,10 @@ export const CorrespondenceManager: React.FC = () => {
   }
 
   const filtered = lista.filter(c => {
-    const s = searchTerm.toLowerCase();
-    const matchesSearch =
-      (c.remetente?.toLowerCase() ?? '').includes(s) ||
-      (c.nomeEmpresaConexa?.toLowerCase() ?? '').includes(s);
     const matchesStatus = !statusFilter || c.statusCorresp === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
+
 
   const getStatusColor = (status: StatusCorresp) => {
     switch (status) {
