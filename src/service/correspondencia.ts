@@ -1,9 +1,32 @@
 import { StatusCorresp } from '../components/CorrespondenceManager';
 import { apiFetch } from './api';
 
-export async function buscarCorrespondencias(pageNumber: number = 0, pageSize: number = 50) {
+export async function buscarCorrespondencias(
+  pageNumber: number = 0, 
+  pageSize: number = 50,
+  termo?: string
+) {
   try {
-    const response = await apiFetch(`/api/correspondencias/listar-correspondencia?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+    // Se houver termo de busca, usa o endpoint de busca
+    if (termo && termo.trim()) {
+      const response = await apiFetch(
+        `/api/correspondencias/buscar-por-nome?termo=${encodeURIComponent(termo.trim())}&pageNumber=${pageNumber}&pageSize=${pageSize}`
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error(`[buscarCorrespondencias] HTTP ${response.status}: ${errorText}`);
+        throw new Error(`Erro ao buscar correspondências (${response.status})`);
+      }
+
+      return response.json();
+    }
+    
+    // Caso contrário, usa o endpoint padrão para listar todas
+    const response = await apiFetch(
+      `/api/correspondencias/listar-correspondencia?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    );
+    
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
       console.error(`[buscarCorrespondencias] HTTP ${response.status}: ${errorText}`);
@@ -34,7 +57,6 @@ export async function apagarCorrespondencia(id: string | number) {
   }
 }
 
-// service/correspondencia.ts - ATUALIZAR ESTA FUNÇÃO
 export async function atualizarStatusCorrespondencia(
   id: number | string, 
   status: StatusCorresp, 

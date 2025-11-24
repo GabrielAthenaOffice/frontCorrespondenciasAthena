@@ -68,7 +68,9 @@ export const CorrespondenceManager: React.FC = () => {
     setCarregando(true);
     setErro(null);
     try {
-      const resp = await buscarCorrespondencias(pageNumber, pageSize);
+      const termoBusca = searchTerm.trim() || undefined;
+
+      const resp = await buscarCorrespondencias(pageNumber, pageSize, termoBusca);
       setLista(resp?.content ?? []);
       setTotalPages(resp?.totalPages ?? 0);
     } catch (e: any) {
@@ -78,9 +80,12 @@ export const CorrespondenceManager: React.FC = () => {
     }
   };
 
+
   useEffect(() => {
     carregar();
-  }, [pageNumber]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageNumber, searchTerm]);
+
 
   const resetForm = () => {
     setFormData({
@@ -233,7 +238,10 @@ export const CorrespondenceManager: React.FC = () => {
             className="flex-1 sm:w-64 px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Buscar por remetente/empresa"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => {
+              setSearchTerm(e.target.value),
+              setPageNumber(0);
+            }}
           />
           <select
             className="px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

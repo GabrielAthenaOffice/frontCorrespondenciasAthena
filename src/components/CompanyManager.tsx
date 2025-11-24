@@ -18,10 +18,7 @@ export const CompanyManager: React.FC = () => {
   const [totalElements, setTotalElements] = useState<number>(0);
   const [carregando, setCarregando] = useState<boolean>(false);
   
-  const [editSituacaoId, setEditSituacaoId] = useState<number | null>(null);
-  const [editSituacao, setEditSituacao] = useState('');
-  const [editMensagemId, setEditMensagemId] = useState<number | null>(null);
-  const [editMensagem, setEditMensagem] = useState('');
+  
   const [aditivoEmpresa, setAditivoEmpresa] = useState<any | null>(null);
   const [aditivoForm, setAditivoForm] = useState({
     unidadeNome: '',
