@@ -67,11 +67,29 @@ export const CorrespondenceManager: React.FC = () => {
   const carregar = async () => {
     setCarregando(true);
     setErro(null);
-    try {
-      const termoBusca = searchTerm.trim() || undefined;
 
-      const resp = await buscarCorrespondencias(pageNumber, pageSize, termoBusca);
-      setLista(resp?.content ?? []);
+    // snapshot do estado atual
+    const termoBusca = searchTerm.trim() || undefined;
+    const paginaAtual = pageNumber;
+
+    try {
+      const resp = await buscarCorrespondencias(paginaAtual, pageSize, termoBusca);
+
+      // se o usuário mudou a página ou o termo enquanto essa requisição rodava, ignora o resultado
+      const termoAtual = searchTerm.trim() || undefined;
+      if (paginaAtual !== pageNumber || termoBusca !== termoAtual) {
+        return;
+      }
+
+      // ordena por data mais recente primeiro
+      const listaOrdenada = [...(resp?.content ?? [])].sort((a: CorrespondenciaDTO, b: CorrespondenciaDTO) => {
+        const da = new Date(a.dataRecebimento).getTime();
+        const db = new Date(b.dataRecebimento).getTime();
+        if (isNaN(da) || isNaN(db)) return 0;
+        return db - da; // mais novo em cima
+      });
+
+      setLista(listaOrdenada);
       setTotalPages(resp?.totalPages ?? 0);
     } catch (e: any) {
       setErro(e?.message ?? 'Falha ao buscar correspondências');
@@ -79,7 +97,6 @@ export const CorrespondenceManager: React.FC = () => {
       setCarregando(false);
     }
   };
-
 
   useEffect(() => {
     carregar();
