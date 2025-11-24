@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Edit,
   Eye,
@@ -10,6 +10,7 @@ import {
 import { apagarCorrespondencia, buscarCorrespondencias, atualizarStatusCorrespondencia } from '../service/correspondencia';
 import { API_BASE } from '../service/api';
 import { apiFetch } from '../service/api';
+
 
 // Tipos do novo schema - ADICIONANDO RECEBIDO
 export type StatusCorresp = 'AVISADA' | 'DEVOLVIDA' | 'USO_INDEVIDO' | 'ANALISE' | 'RECEBIDO';
@@ -60,48 +61,62 @@ export const CorrespondenceManager: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | StatusCorresp>('');
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const requestIdRef = useRef(0);
   
   const [showActionModal, setShowActionModal] = useState(false);
   const [createdData, setCreatedData] = useState<any>(null);
 
   const carregar = async () => {
-    setCarregando(true);
-    setErro(null);
+  setCarregando(true);
+  setErro(null);
 
-    // snapshot do estado atual
-    const termoBusca = searchTerm.trim() || undefined;
-    const paginaAtual = pageNumber;
+  const currentRequestId = ++requestIdRef.current; // id dessa requisição
 
-    try {
-      const resp = await buscarCorrespondencias(paginaAtual, pageSize, termoBusca);
+  try {
+    const termoBusca = debouncedSearchTerm.trim() || undefined;
+    const resp = await buscarCorrespondencias(pageNumber, pageSize, termoBusca);
 
-      // se o usuário mudou a página ou o termo enquanto essa requisição rodava, ignora o resultado
-      const termoAtual = searchTerm.trim() || undefined;
-      if (paginaAtual !== pageNumber || termoBusca !== termoAtual) {
-        return;
-      }
+    // se outra requisição já foi disparada depois dessa, ignora o resultado
+    if (currentRequestId !== requestIdRef.current) {
+      return;
+    }
 
-      // ordena por data mais recente primeiro
-      const listaOrdenada = [...(resp?.content ?? [])].sort((a: CorrespondenciaDTO, b: CorrespondenciaDTO) => {
+    // ordena por data mais recente
+    const listaOrdenada = [...(resp?.content ?? [])].sort(
+      (a: CorrespondenciaDTO, b: CorrespondenciaDTO) => {
         const da = new Date(a.dataRecebimento).getTime();
         const db = new Date(b.dataRecebimento).getTime();
         if (isNaN(da) || isNaN(db)) return 0;
         return db - da; // mais novo em cima
-      });
+      }
+    );
 
-      setLista(listaOrdenada);
-      setTotalPages(resp?.totalPages ?? 0);
-    } catch (e: any) {
-      setErro(e?.message ?? 'Falha ao buscar correspondências');
-    } finally {
+    setLista(listaOrdenada);
+    setTotalPages(resp?.totalPages ?? 0);
+  } catch (e: any) {
+    if (currentRequestId !== requestIdRef.current) {
+      // erro de request antiga, ignora
+      return;
+    }
+    setErro(e?.message ?? 'Falha ao buscar correspondências');
+  } finally {
+    if (currentRequestId === requestIdRef.current) {
       setCarregando(false);
     }
-  };
+  }
+};
 
   useEffect(() => {
-    carregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageNumber, searchTerm]);
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // se quiser garantir que toda busca comece na pág. 0:
+      setPageNumber(0);
+    }, 1000); // 1s sem digitar
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
 
   const resetForm = () => {
@@ -252,10 +267,9 @@ export const CorrespondenceManager: React.FC = () => {
             className="flex-1 sm:w-64 px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Buscar por remetente/empresa"
             value={searchTerm}
-            onChange={e => {
-              setSearchTerm(e.target.value),
-              setPageNumber(0);
-            }}
+            onChange={e => 
+              setSearchTerm(e.target.value)
+            }
           />
           <select
             className="px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
