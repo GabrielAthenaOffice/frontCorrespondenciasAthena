@@ -32,6 +32,10 @@ export const CorrespondenceManager: React.FC = () => {
   const [pageNumber, setPageNumber] = useState<number>(0);
   const [pageSize] = useState<number>(50);
   const [totalPages, setTotalPages] = useState<number>(0);
+
+  //ANEXOSDTO
+  const [enviarComAnexo, setEnviarComAnexo] = useState(false);
+  const [arquivosStatus, setArquivosStatus] = useState<File[]>([]);
   
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CorrespondenciaDTO | null>(null);
@@ -58,6 +62,8 @@ export const CorrespondenceManager: React.FC = () => {
   const [novoStatus, setNovoStatus] = useState<StatusCorresp>('ANALISE');
   const [motivo, setMotivo] = useState<string>('');
   const [alteradoPor, setAlteradoPor] = useState<string>('');
+
+  const [arquivosParaEnvio, setArquivosParaEnvio] = useState<File[]>([]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | StatusCorresp>('');
@@ -191,36 +197,52 @@ export const CorrespondenceManager: React.FC = () => {
 
   // NOVA FUNÇÃO PARA ABRIR MODAL DE ALTERAR STATUS
   const handleAlterarStatus = (corresp: CorrespondenciaDTO) => {
-    setSelectedCorrespondence(corresp);
-    setNovoStatus(corresp.statusCorresp);
-    setMotivo('');
-    setAlteradoPor('');
-    setShowStatusModal(true);
-  };
+  setSelectedCorrespondence(corresp);
+  setNovoStatus(corresp.statusCorresp);
+  setMotivo('');
+  setAlteradoPor('');
+  setArquivosParaEnvio([]); // Limpa arquivos ao abrir modal
+  setShowStatusModal(true);
+};
 
   // NOVA FUNÇÃO PARA SALVAR ALTERAÇÃO DE STATUS
   const handleSalvarStatus = async () => {
     if (!selectedCorrespondence) return;
 
     try {
+      console.log('[handleSalvarStatus] Iniciando atualização de status');
+      console.log('[handleSalvarStatus] Arquivos:', arquivosParaEnvio.length);
+      
       await atualizarStatusCorrespondencia(
         selectedCorrespondence.id, 
         novoStatus, 
         motivo, 
-        alteradoPor
+        alteradoPor,
+        arquivosParaEnvio // Passa os arquivos para o serviço
       );
       
+      console.log('[handleSalvarStatus] Status atualizado com sucesso');
+      
+      // Feedback visual
+      if (arquivosParaEnvio.length > 0) {
+        alert('Status alterado e email enviado ao cliente com sucesso!');
+      } else {
+        alert('Status alterado com sucesso!');
+      }
+      
       setShowStatusModal(false);
-      await carregar(); // Recarrega a lista para mostrar o status atualizado
+      await carregar(); // Recarrega a lista
       
       // Limpa os estados
       setSelectedCorrespondence(null);
       setNovoStatus('ANALISE');
       setMotivo('');
       setAlteradoPor('');
+      setArquivosParaEnvio([]); // Limpa arquivos
       
     } catch (error: any) {
-      setErro(error?.message || 'Erro ao alterar status da correspondência');
+      console.error('[handleSalvarStatus] Erro:', error);
+      alert(error?.message || 'Erro ao alterar status da correspondência');
     }
   };
 
@@ -483,10 +505,82 @@ export const CorrespondenceManager: React.FC = () => {
                 />
               </div>
 
+              {/* NOVO: Seção de upload de arquivos */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Anexar PDFs para envio por email (opcional)
+                </label>
+                <div className="flex flex-col gap-3">
+                  <label className="inline-flex items-center cursor-pointer gap-2 w-fit">
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const files = e.target.files;
+                        if (files) {
+                          setArquivosParaEnvio(prev => [...prev, ...Array.from(files)]);
+                        }
+                      }}
+                    />
+                    <ImageIcon className="w-4 h-4 text-gray-300" />
+                    <span className="px-3 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                      Anexar arquivo
+                    </span>
+                  </label>
+
+                  {arquivosParaEnvio.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs text-blue-400">
+                        ℹ️ Com anexos, um email será enviado ao cliente automaticamente
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {arquivosParaEnvio.map((file, index) => {
+                          const isImage = file.type.startsWith('image/');
+                          const fileURL = URL.createObjectURL(file);
+                          return (
+                            <div
+                              key={index}
+                              className="relative border border-gray-700 rounded-lg p-2 flex flex-col items-center justify-center text-center text-xs bg-[#2c2f38]"
+                            >
+                              {isImage ? (
+                                <img
+                                  src={fileURL}
+                                  alt={file.name}
+                                  className="w-16 h-16 object-cover rounded-md mb-1"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 flex items-center justify-center bg-gray-800 rounded-md text-gray-300">
+                                  PDF
+                                </div>
+                              )}
+                              <span className="truncate max-w-[100px] text-gray-300">{file.name}</span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setArquivosParaEnvio(prev => prev.filter((_, i) => i !== index))
+                                }
+                                className="absolute top-1 right-1 text-red-400 hover:text-red-300 text-xs"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowStatusModal(false)}
+                  onClick={() => {
+                    setShowStatusModal(false);
+                    setArquivosParaEnvio([]); // Limpa arquivos ao cancelar
+                  }}
                   className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Cancelar
@@ -496,7 +590,7 @@ export const CorrespondenceManager: React.FC = () => {
                   onClick={handleSalvarStatus}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
-                  Salvar Status
+                  {arquivosParaEnvio.length > 0 ? 'Salvar e Enviar Email' : 'Salvar Status'}
                 </button>
               </div>
             </div>

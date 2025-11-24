@@ -57,29 +57,78 @@ export async function apagarCorrespondencia(id: string | number) {
   }
 }
 
+
 export async function atualizarStatusCorrespondencia(
   id: number | string, 
   status: StatusCorresp, 
   motivo: string, 
-  alteradoPor: string
+  alteradoPor: string,
+  arquivos?: File[] // NOVO: parâmetro opcional para arquivos
 ) {
   try {
-    console.log(`[atualizarStatusCorrespondencia] Enviando PATCH para /api/correspondencias/${id}/status`);
-    console.log(`[atualizarStatusCorrespondencia] Payload:`, { status, motivo, alteradoPor });
+    console.log(`[atualizarStatusCorrespondencia] ID: ${id}, Status: ${status}, Arquivos: ${arquivos?.length || 0}`);
+
+    // CASO 1: SEM ARQUIVOS - Envia JSON puro
+    if (!arquivos || arquivos.length === 0) {
+      console.log('[atualizarStatusCorrespondencia] Modo: JSON (sem anexos)');
+      
+      const response = await apiFetch(`/api/correspondencias/${id}/status`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status,
+          motivo,
+          alteradoPor,
+          enviar: false // Explicitamente false quando não tem arquivos
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error(`[atualizarStatusCorrespondencia] HTTP ${response.status}: ${errorText}`);
+        throw new Error(`Erro ao atualizar status (${response.status})`);
+      }
+      
+      return response.json();
+    }
+
+    // CASO 2: COM ARQUIVOS - Envia multipart/form-data
+    console.log('[atualizarStatusCorrespondencia] Modo: MULTIPART (com anexos)');
+    
+    const formData = new FormData();
+    
+    // Adiciona os dados como JSON na parte "dados"
+    const dados = {
+      status,
+      motivo,
+      alteradoPor,
+      enviar: false // Backend vai sobrescrever para true ao detectar arquivos
+    };
+    
+    formData.append('dados', new Blob([JSON.stringify(dados)], {
+      type: 'application/json'
+    }));
+    
+    // Adiciona os arquivos
+    arquivos.forEach((arquivo, index) => {
+      console.log(`[atualizarStatusCorrespondencia] Anexando arquivo ${index + 1}: ${arquivo.name}`);
+      formData.append('arquivos', arquivo);
+    });
+
+    // Log do FormData (debug)
+    for (let [key, value] of formData.entries()) {
+      console.log(`[FormData] ${key}:`, value);
+    }
 
     const response = await apiFetch(`/api/correspondencias/${id}/status`, {
       method: 'PATCH',
-      headers: { 
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        status,
-        motivo,
-        alteradoPor
-      }),
+      // NÃO definir Content-Type - o navegador define automaticamente com boundary
+      body: formData,
     });
     
-    console.log(`[atualizarStatusCorrespondencia] Response status:`, response.status);
+    console.log(`[atualizarStatusCorrespondencia] Response status: ${response.status}`);
     
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
@@ -88,6 +137,7 @@ export async function atualizarStatusCorrespondencia(
     }
     
     return response.json();
+    
   } catch (error) {
     console.error('[atualizarStatusCorrespondencia] Error:', error);
     throw error instanceof Error ? error : new Error('Erro ao atualizar status da correspondência');
