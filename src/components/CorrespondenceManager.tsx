@@ -32,10 +32,6 @@ export const CorrespondenceManager: React.FC = () => {
   const [pageNumber, setPageNumber] = useState<number>(0);
   const [pageSize] = useState<number>(50);
   const [totalPages, setTotalPages] = useState<number>(0);
-
-  //ANEXOSDTO
-  const [enviarComAnexo, setEnviarComAnexo] = useState(false);
-  const [arquivosStatus, setArquivosStatus] = useState<File[]>([]);
   
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CorrespondenciaDTO | null>(null);
@@ -117,12 +113,18 @@ export const CorrespondenceManager: React.FC = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      // se quiser garantir que toda busca comece na pág. 0:
+      
       setPageNumber(0);
     }, 1000); // 1s sem digitar
 
     return () => clearTimeout(handler);
   }, [searchTerm]);
+
+  // useEffect 2: Carrega as correspondências (ESTE ESTAVA FALTANDO!)
+  useEffect(() => {
+    console.log('[useEffect] Trigger carregar');
+    carregar();
+  }, [pageNumber, debouncedSearchTerm]);
 
 
   const resetForm = () => {
