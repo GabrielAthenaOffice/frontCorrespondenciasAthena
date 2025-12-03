@@ -693,86 +693,108 @@ export const CorrespondenceManager: React.FC = () => {
         </div>
       )}
 
-      {/* Lista */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remetente</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Receb.</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {carregando ? (
-                <tr><td colSpan={10} className="px-6 py-12 text-center text-gray-500">Carregando...</td></tr>
-              ) : erro ? (
-                <tr><td colSpan={10} className="px-6 py-12 text-center text-red-500">{erro}</td></tr>
-              ) : filtered.length > 0 ? (
-                filtered.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{c.remetente}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">{c.nomeEmpresaConexa}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+      {/* Lista - Inbox Style */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100">
+        {carregando ? (
+          <div className="px-6 py-12 text-center text-gray-500">Carregando...</div>
+        ) : erro ? (
+          <div className="px-6 py-12 text-center text-red-500">{erro}</div>
+        ) : filtered.length > 0 ? (
+          filtered.map((c) => (
+            <div
+              key={c.id}
+              className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+            >
+              <div className="flex items-start gap-4">
+                {/* Icon */}
+                <div className="flex-shrink-0 mt-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${c.statusCorresp === 'RECEBIDO' ? 'bg-green-100' :
+                      c.statusCorresp === 'AVISADA' ? 'bg-yellow-100' :
+                        c.statusCorresp === 'DEVOLVIDA' ? 'bg-red-100' :
+                          c.statusCorresp === 'USO_INDEVIDO' ? 'bg-purple-100' :
+                            'bg-blue-100'
+                    }`}>
+                    <Building className={`w-5 h-5 ${c.statusCorresp === 'RECEBIDO' ? 'text-green-600' :
+                        c.statusCorresp === 'AVISADA' ? 'text-yellow-600' :
+                          c.statusCorresp === 'DEVOLVIDA' ? 'text-red-600' :
+                            c.statusCorresp === 'USO_INDEVIDO' ? 'text-purple-600' :
+                              'text-blue-600'
+                      }`} />
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Line 1: Company name */}
+                  <div className="flex items-center justify-between gap-4 mb-1">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">
+                      {c.nomeEmpresaConexa}
+                    </h3>
+                    {/* Action buttons - visible on hover */}
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleAlterarStatus(c)}
+                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Alterar Status"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => apagarCorrespondenciaHandle(String(c.id))}
+                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Excluir"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                      {c.fotoCorrespondencia && (
+                        <a
+                          href={`${API_BASE}/api/correspondencias/arquivo/${encodeURIComponent(c.fotoCorrespondencia)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Ver foto"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Line 2: Sender, date, status */}
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span>{c.remetente}</span>
+                    </div>
+                    <span className="text-gray-400">•</span>
+                    <span>
                       {(() => {
                         try {
                           const d = new Date(c.dataRecebimento);
-                          return isNaN(d.getTime()) ? c.dataRecebimento : d.toLocaleString('pt-BR', { timeZone: 'America/Recife' });
+                          return isNaN(d.getTime()) ? c.dataRecebimento : d.toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
                         } catch {
                           return c.dataRecebimento;
                         }
                       })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(c.statusCorresp)}`}>
-                        {c.statusCorresp}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-2">
-                        {/* BOTÃO ALTERADO PARA ABRIR MODAL DE STATUS */}
-                        <button
-                          onClick={() => handleAlterarStatus(c)}
-                          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-                          title="Alterar Status"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => apagarCorrespondenciaHandle(String(c.id))}
-                          className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </button>
-                        {c.fotoCorrespondencia && (
-                          <a
-                            href={`${API_BASE}/api/correspondencias/arquivo/${encodeURIComponent(c.fotoCorrespondencia)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
-                            title="Ver foto"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500">Nenhuma correspondência encontrada</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(c.statusCorresp)}`}>
+                      {c.statusCorresp}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="px-6 py-12 text-center text-gray-500">Nenhuma correspondência encontrada</div>
+        )}
       </div>
 
       {/* Pagination controls */}
