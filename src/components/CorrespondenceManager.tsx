@@ -510,20 +510,6 @@ export const CorrespondenceManager: React.FC = () => {
                 />
               </div>
 
-              {/* NOVO: Checkbox para enviar email mesmo sem anexo */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="enviarEmail"
-                  checked={enviarEmail}
-                  onChange={e => setEnviarEmail(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label htmlFor="enviarEmail" className="text-sm font-medium text-gray-300 cursor-pointer">
-                  Enviar notificação por e-mail ao cliente
-                </label>
-              </div>
-
               {/* NOVO: Seção de upload de arquivos */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
