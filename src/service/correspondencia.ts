@@ -69,34 +69,8 @@ export async function atualizarStatusCorrespondencia(
   try {
     console.log(`[atualizarStatusCorrespondencia] ID: ${id}, Status: ${status}, Arquivos: ${arquivos?.length || 0}, EnviarEmail: ${enviarEmail}`);
 
-    // CASO 1: SEM ARQUIVOS - Envia JSON puro
-    if (!arquivos || arquivos.length === 0) {
-      console.log('[atualizarStatusCorrespondencia] Modo: JSON (sem anexos)');
-
-      const response = await apiFetch(`/api/correspondencias/${id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status,
-          motivo,
-          alteradoPor,
-          enviar: enviarEmail // Usa a flag passada pelo front
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error(`[atualizarStatusCorrespondencia] HTTP ${response.status}: ${errorText}`);
-        throw new Error(`Erro ao atualizar status (${response.status})`);
-      }
-
-      return response.json();
-    }
-
-    // CASO 2: COM ARQUIVOS - Envia multipart/form-data
-    console.log('[atualizarStatusCorrespondencia] Modo: MULTIPART (com anexos)');
+    // SEMPRE usar FormData, pois o backend espera @RequestPart
+    console.log('[atualizarStatusCorrespondencia] Modo: MULTIPART (sempre)');
 
     const formData = new FormData();
 
@@ -105,18 +79,20 @@ export async function atualizarStatusCorrespondencia(
       status,
       motivo,
       alteradoPor,
-      enviar: true // Com arquivos, sempre true (ou poderia ser enviarEmail || true)
+      enviar: enviarEmail || (arquivos && arquivos.length > 0) // Envia se flag true OU se tiver arquivos
     };
 
     formData.append('dados', new Blob([JSON.stringify(dados)], {
       type: 'application/json'
     }));
 
-    // Adiciona os arquivos
-    arquivos.forEach((arquivo, index) => {
-      console.log(`[atualizarStatusCorrespondencia] Anexando arquivo ${index + 1}: ${arquivo.name}`);
-      formData.append('arquivos', arquivo);
-    });
+    // Adiciona os arquivos se houver
+    if (arquivos && arquivos.length > 0) {
+      arquivos.forEach((arquivo, index) => {
+        console.log(`[atualizarStatusCorrespondencia] Anexando arquivo ${index + 1}: ${arquivo.name}`);
+        formData.append('arquivos', arquivo);
+      });
+    }
 
     // Log do FormData (debug)
     for (let [key, value] of formData.entries()) {
