@@ -32,7 +32,7 @@ export const CorrespondenceManager: React.FC = () => {
   const [pageNumber, setPageNumber] = useState<number>(0);
   const [pageSize] = useState<number>(50);
   const [totalPages, setTotalPages] = useState<number>(0);
-  
+
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CorrespondenciaDTO | null>(null);
 
@@ -58,6 +58,7 @@ export const CorrespondenceManager: React.FC = () => {
   const [novoStatus, setNovoStatus] = useState<StatusCorresp>('ANALISE');
   const [motivo, setMotivo] = useState<string>('');
   const [alteradoPor, setAlteradoPor] = useState<string>('');
+  const [enviarEmail, setEnviarEmail] = useState<boolean>(false); // NOVO: Estado para checkbox
 
   const [arquivosParaEnvio, setArquivosParaEnvio] = useState<File[]>([]);
 
@@ -66,54 +67,54 @@ export const CorrespondenceManager: React.FC = () => {
 
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const requestIdRef = useRef(0);
-  
+
   const [showActionModal, setShowActionModal] = useState(false);
   const [createdData, setCreatedData] = useState<any>(null);
 
   const carregar = async () => {
-  setCarregando(true);
-  setErro(null);
+    setCarregando(true);
+    setErro(null);
 
-  const currentRequestId = ++requestIdRef.current; // id dessa requisição
+    const currentRequestId = ++requestIdRef.current; // id dessa requisição
 
-  try {
-    const termoBusca = debouncedSearchTerm.trim() || undefined;
-    const resp = await buscarCorrespondencias(pageNumber, pageSize, termoBusca);
+    try {
+      const termoBusca = debouncedSearchTerm.trim() || undefined;
+      const resp = await buscarCorrespondencias(pageNumber, pageSize, termoBusca);
 
-    // se outra requisição já foi disparada depois dessa, ignora o resultado
-    if (currentRequestId !== requestIdRef.current) {
-      return;
-    }
-
-    // ordena por data mais recente
-    const listaOrdenada = [...(resp?.content ?? [])].sort(
-      (a: CorrespondenciaDTO, b: CorrespondenciaDTO) => {
-        const da = new Date(a.dataRecebimento).getTime();
-        const db = new Date(b.dataRecebimento).getTime();
-        if (isNaN(da) || isNaN(db)) return 0;
-        return db - da; // mais novo em cima
+      // se outra requisição já foi disparada depois dessa, ignora o resultado
+      if (currentRequestId !== requestIdRef.current) {
+        return;
       }
-    );
 
-    setLista(listaOrdenada);
-    setTotalPages(resp?.totalPages ?? 0);
-  } catch (e: any) {
-    if (currentRequestId !== requestIdRef.current) {
-      // erro de request antiga, ignora
-      return;
+      // ordena por data mais recente
+      const listaOrdenada = [...(resp?.content ?? [])].sort(
+        (a: CorrespondenciaDTO, b: CorrespondenciaDTO) => {
+          const da = new Date(a.dataRecebimento).getTime();
+          const db = new Date(b.dataRecebimento).getTime();
+          if (isNaN(da) || isNaN(db)) return 0;
+          return db - da; // mais novo em cima
+        }
+      );
+
+      setLista(listaOrdenada);
+      setTotalPages(resp?.totalPages ?? 0);
+    } catch (e: any) {
+      if (currentRequestId !== requestIdRef.current) {
+        // erro de request antiga, ignora
+        return;
+      }
+      setErro(e?.message ?? 'Falha ao buscar correspondências');
+    } finally {
+      if (currentRequestId === requestIdRef.current) {
+        setCarregando(false);
+      }
     }
-    setErro(e?.message ?? 'Falha ao buscar correspondências');
-  } finally {
-    if (currentRequestId === requestIdRef.current) {
-      setCarregando(false);
-    }
-  }
-};
+  };
 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      
+
       setPageNumber(0);
     }, 1000); // 1s sem digitar
 
@@ -187,7 +188,7 @@ export const CorrespondenceManager: React.FC = () => {
         console.error('Erro ao buscar empresa por nome:', err);
         setCreatedData(created);
       }
-      
+
       if (!created.nomeEmpresaConexa) {
         console.warn("⚠️ Backend não retornou nomeEmpresaConexa no created. Verifique resposta de /processar-correspondencia");
       }
@@ -199,13 +200,14 @@ export const CorrespondenceManager: React.FC = () => {
 
   // NOVA FUNÇÃO PARA ABRIR MODAL DE ALTERAR STATUS
   const handleAlterarStatus = (corresp: CorrespondenciaDTO) => {
-  setSelectedCorrespondence(corresp);
-  setNovoStatus(corresp.statusCorresp);
-  setMotivo('');
-  setAlteradoPor('');
-  setArquivosParaEnvio([]); // Limpa arquivos ao abrir modal
-  setShowStatusModal(true);
-};
+    setSelectedCorrespondence(corresp);
+    setNovoStatus(corresp.statusCorresp);
+    setMotivo('');
+    setAlteradoPor('');
+    setArquivosParaEnvio([]); // Limpa arquivos ao abrir modal
+    setEnviarEmail(false); // Reset checkbox
+    setShowStatusModal(true);
+  };
 
   // NOVA FUNÇÃO PARA SALVAR ALTERAÇÃO DE STATUS
   const handleSalvarStatus = async () => {
@@ -214,34 +216,35 @@ export const CorrespondenceManager: React.FC = () => {
     try {
       console.log('[handleSalvarStatus] Iniciando atualização de status');
       console.log('[handleSalvarStatus] Arquivos:', arquivosParaEnvio.length);
-      
+
       await atualizarStatusCorrespondencia(
-        selectedCorrespondence.id, 
-        novoStatus, 
-        motivo, 
+        selectedCorrespondence.id,
+        novoStatus,
+        motivo,
         alteradoPor,
-        arquivosParaEnvio // Passa os arquivos para o serviço
+        arquivosParaEnvio, // Passa os arquivos para o serviço
+        enviarEmail // Passa a flag de envio de email
       );
-      
+
       console.log('[handleSalvarStatus] Status atualizado com sucesso');
-      
+
       // Feedback visual
-      if (arquivosParaEnvio.length > 0) {
+      if (arquivosParaEnvio.length > 0 || enviarEmail) {
         alert('Status alterado e email enviado ao cliente com sucesso!');
       } else {
         alert('Status alterado com sucesso!');
       }
-      
+
       setShowStatusModal(false);
       await carregar(); // Recarrega a lista
-      
+
       // Limpa os estados
       setSelectedCorrespondence(null);
       setNovoStatus('ANALISE');
       setMotivo('');
       setAlteradoPor('');
       setArquivosParaEnvio([]); // Limpa arquivos
-      
+
     } catch (error: any) {
       console.error('[handleSalvarStatus] Erro:', error);
       alert(error?.message || 'Erro ao alterar status da correspondência');
@@ -291,7 +294,7 @@ export const CorrespondenceManager: React.FC = () => {
             className="flex-1 sm:w-64 px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Buscar por remetente/empresa"
             value={searchTerm}
-            onChange={e => 
+            onChange={e =>
               setSearchTerm(e.target.value)
             }
           />
@@ -426,7 +429,7 @@ export const CorrespondenceManager: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
@@ -460,7 +463,7 @@ export const CorrespondenceManager: React.FC = () => {
                 <div className="bg-gray-800 p-3 rounded-lg text-gray-300">
                   <div><strong>Empresa:</strong> {selectedCorrespondence.nomeEmpresaConexa}</div>
                   <div><strong>Remetente:</strong> {selectedCorrespondence.remetente}</div>
-                  <div><strong>Status atual:</strong> 
+                  <div><strong>Status atual:</strong>
                     <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedCorrespondence.statusCorresp)}`}>
                       {selectedCorrespondence.statusCorresp}
                     </span>
@@ -505,6 +508,20 @@ export const CorrespondenceManager: React.FC = () => {
                   placeholder="Nome de quem está alterando o status"
                   required
                 />
+              </div>
+
+              {/* NOVO: Checkbox para enviar email mesmo sem anexo */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="enviarEmail"
+                  checked={enviarEmail}
+                  onChange={e => setEnviarEmail(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <label htmlFor="enviarEmail" className="text-sm font-medium text-gray-300 cursor-pointer">
+                  Enviar notificação por e-mail ao cliente
+                </label>
               </div>
 
               {/* NOVO: Seção de upload de arquivos */}
@@ -592,7 +609,7 @@ export const CorrespondenceManager: React.FC = () => {
                   onClick={handleSalvarStatus}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
-                  {arquivosParaEnvio.length > 0 ? 'Salvar e Enviar Email' : 'Salvar Status'}
+                  {(arquivosParaEnvio.length > 0 || enviarEmail) ? 'Salvar e Enviar Email' : 'Salvar Status'}
                 </button>
               </div>
             </div>
@@ -661,7 +678,7 @@ export const CorrespondenceManager: React.FC = () => {
                     console.log('🧩', key, val);
                   }
 
-                  const resp = await apiFetch(`/api/correspondencias/${createdData.id}/enviar-aviso-resend-upload`,  {
+                  const resp = await apiFetch(`/api/correspondencias/${createdData.id}/enviar-aviso-resend-upload`, {
                     method: 'POST',
                     body: form,
                   });
