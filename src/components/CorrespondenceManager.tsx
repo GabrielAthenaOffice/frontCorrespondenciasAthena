@@ -287,11 +287,11 @@ export const CorrespondenceManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-100">Correspondências</h2>
+          <h2 className="text-2xl font-bold text-ink-900">Correspondências</h2>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <input
-            className="flex-1 sm:w-64 px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 sm:w-64 px-3 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 placeholder-ink-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             placeholder="Buscar por remetente/empresa"
             value={searchTerm}
             onChange={e =>
@@ -299,7 +299,7 @@ export const CorrespondenceManager: React.FC = () => {
             }
           />
           <select
-            className="px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as any)}
           >
@@ -316,7 +316,7 @@ export const CorrespondenceManager: React.FC = () => {
               setEditing(null);
               resetForm();
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="btn-primary flex items-center gap-2"
           >
             <span className="text-lg font-bold">+</span> Nova Correspondência
           </button>
@@ -325,22 +325,22 @@ export const CorrespondenceManager: React.FC = () => {
 
       {/* Form Modal (MANTIDO PARA CRIAÇÃO) */}
       {showForm && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#23272f] rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-white">{editing ? 'Editar' : 'Nova'} Correspondência</h3>
+        <div className="fixed inset-0 bg-ink-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-panel-200">
+            <div className="p-6 border-b border-panel-100">
+              <h3 className="text-lg font-semibold text-ink-900">{editing ? 'Editar' : 'Nova'} Correspondência</h3>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nome da Empresa *</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Nome da Empresa *</label>
                 <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                   <input
                     id="primeiroId"
                     type="text"
                     value={formData.nomeEmpresaConexa}
                     onChange={e => setFormData({ ...formData, nomeEmpresaConexa: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 placeholder-ink-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     placeholder="Nome da empresa"
                     required
                   />
@@ -348,15 +348,15 @@ export const CorrespondenceManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Remetente *</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Remetente *</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                   <input
                     id="segundoId"
                     type="text"
                     value={formData.remetente}
                     onChange={e => setFormData({ ...formData, remetente: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 placeholder-ink-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     placeholder="Nome do remetente"
                     required
                   />
@@ -382,8 +382,8 @@ export const CorrespondenceManager: React.FC = () => {
                         }
                       }}
                     />
-                    <ImageIcon className="w-4 h-4 text-gray-300" />
-                    <span className="px-3 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                    <ImageIcon className="w-4 h-4 text-ink-400" />
+                    <span className="px-3 py-2 bg-panel-100 text-ink-700 rounded-lg hover:bg-panel-200 transition-colors text-sm border border-panel-200">
                       Anexar
                     </span>
                   </label>
@@ -396,7 +396,7 @@ export const CorrespondenceManager: React.FC = () => {
                         return (
                           <div
                             key={index}
-                            className="relative border border-gray-700 rounded-lg p-2 flex flex-col items-center justify-center text-center text-xs bg-[#2c2f38]"
+                            className="relative border border-panel-200 rounded-lg p-2 flex flex-col items-center justify-center text-center text-xs bg-panel-50"
                           >
                             {isImage ? (
                               <img
@@ -405,11 +405,11 @@ export const CorrespondenceManager: React.FC = () => {
                                 className="w-20 h-20 object-cover rounded-md mb-1"
                               />
                             ) : (
-                              <div className="w-20 h-20 flex items-center justify-center bg-gray-800 rounded-md text-gray-300">
+                              <div className="w-20 h-20 flex items-center justify-center bg-white border border-panel-200 rounded-md text-ink-500">
                                 PDF
                               </div>
                             )}
-                            <span className="truncate max-w-[80px] text-gray-300">{file.name}</span>
+                            <span className="truncate max-w-[80px] text-ink-700">{file.name}</span>
                             <button
                               type="button"
                               onClick={() =>
@@ -434,7 +434,7 @@ export const CorrespondenceManager: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setEditing(null); }}
-                  className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+                  className="px-4 py-2 border border-panel-200 text-ink-700 rounded-lg hover:bg-panel-50 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -452,15 +452,15 @@ export const CorrespondenceManager: React.FC = () => {
 
       {/* NOVO MODAL PARA ALTERAR STATUS */}
       {showStatusModal && selectedCorrespondence && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#23272f] rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-white">Alterar Status da Correspondência</h3>
+        <div className="fixed inset-0 bg-ink-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-panel-200">
+            <div className="p-6 border-b border-panel-100">
+              <h3 className="text-lg font-semibold text-ink-900">Alterar Status da Correspondência</h3>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Correspondência</label>
-                <div className="bg-gray-800 p-3 rounded-lg text-gray-300">
+                <label className="block text-sm font-medium text-ink-700 mb-2">Correspondência</label>
+                <div className="bg-panel-50 p-3 rounded-lg text-ink-700 border border-panel-200">
                   <div><strong>Empresa:</strong> {selectedCorrespondence.nomeEmpresaConexa}</div>
                   <div><strong>Remetente:</strong> {selectedCorrespondence.remetente}</div>
                   <div><strong>Status atual:</strong>
@@ -472,11 +472,11 @@ export const CorrespondenceManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Novo Status *</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Novo Status *</label>
                 <select
                   value={novoStatus}
                   onChange={e => setNovoStatus(e.target.value as StatusCorresp)}
-                  className="w-full px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   required
                 >
                   <option value="ANALISE">ANALISE</option>
@@ -488,23 +488,23 @@ export const CorrespondenceManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Motivo da Alteração</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Motivo da Alteração</label>
                 <textarea
                   value={motivo}
                   onChange={e => setMotivo(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 placeholder-ink-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="Descreva o motivo da alteração de status..."
                   rows={3}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Alterado por *</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Alterado por *</label>
                 <input
                   type="text"
                   value={alteradoPor}
                   onChange={e => setAlteradoPor(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#23272f] border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-panel-200 rounded-lg text-ink-900 placeholder-ink-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="Nome de quem está alterando o status"
                   required
                 />
@@ -529,8 +529,8 @@ export const CorrespondenceManager: React.FC = () => {
                         }
                       }}
                     />
-                    <ImageIcon className="w-4 h-4 text-gray-300" />
-                    <span className="px-3 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                    <ImageIcon className="w-4 h-4 text-ink-400" />
+                    <span className="px-3 py-2 bg-panel-100 text-ink-700 rounded-lg hover:bg-panel-200 transition-colors text-sm border border-panel-200">
                       Anexar arquivo
                     </span>
                   </label>
@@ -547,7 +547,7 @@ export const CorrespondenceManager: React.FC = () => {
                           return (
                             <div
                               key={index}
-                              className="relative border border-gray-700 rounded-lg p-2 flex flex-col items-center justify-center text-center text-xs bg-[#2c2f38]"
+                              className="relative border border-panel-200 rounded-lg p-2 flex flex-col items-center justify-center text-center text-xs bg-panel-50"
                             >
                               {isImage ? (
                                 <img
@@ -556,11 +556,11 @@ export const CorrespondenceManager: React.FC = () => {
                                   className="w-16 h-16 object-cover rounded-md mb-1"
                                 />
                               ) : (
-                                <div className="w-16 h-16 flex items-center justify-center bg-gray-800 rounded-md text-gray-300">
+                                <div className="w-16 h-16 flex items-center justify-center bg-white border border-panel-200 rounded-md text-ink-500">
                                   PDF
                                 </div>
                               )}
-                              <span className="truncate max-w-[100px] text-gray-300">{file.name}</span>
+                              <span className="truncate max-w-[100px] text-ink-700">{file.name}</span>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -586,14 +586,14 @@ export const CorrespondenceManager: React.FC = () => {
                     setShowStatusModal(false);
                     setArquivosParaEnvio([]); // Limpa arquivos ao cancelar
                   }}
-                  className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
+                  className="px-4 py-2 border border-panel-200 text-ink-700 rounded-lg hover:bg-panel-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSalvarStatus}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="btn-primary"
                 >
                   {(arquivosParaEnvio.length > 0 || enviarEmail) ? 'Salvar e Enviar Email' : 'Salvar Status'}
                 </button>
@@ -605,9 +605,9 @@ export const CorrespondenceManager: React.FC = () => {
 
       {/* Modal de Ações (MANTIDO) */}
       {showActionModal && createdData && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#23272f] rounded-xl shadow-xl p-6 w-80 space-y-4">
-            <h3 className="text-lg font-semibold text-white text-center">O que deseja fazer?</h3>
+        <div className="fixed inset-0 bg-ink-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-80 space-y-4 border border-panel-200">
+            <h3 className="text-lg font-semibold text-ink-900 text-center">O que deseja fazer?</h3>
 
             <button
               onClick={async () => {
@@ -631,7 +631,7 @@ export const CorrespondenceManager: React.FC = () => {
                 resetForm();
                 setShowForm(false);
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
+              className="w-full btn-primary"
             >
               Enviar aviso (sem anexo)
             </button>
@@ -643,7 +643,7 @@ export const CorrespondenceManager: React.FC = () => {
                 resetForm();
                 setShowForm(false);
               }}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg"
+              className="w-full px-3 py-2 rounded-lg font-medium transition-colors duration-200 bg-panel-100 text-ink-700 hover:bg-panel-200"
             >
               Salvar correspondência
             </button>
@@ -694,7 +694,7 @@ export const CorrespondenceManager: React.FC = () => {
       )}
 
       {/* Lista - Inbox Style */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 divide-y divide-gray-100">
+      <div className="card divide-y divide-panel-100 overflow-hidden">
         {carregando ? (
           <div className="px-6 py-12 text-center text-gray-500">Carregando...</div>
         ) : erro ? (
@@ -703,22 +703,22 @@ export const CorrespondenceManager: React.FC = () => {
           filtered.map((c) => (
             <div
               key={c.id}
-              className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+              className="px-6 py-4 hover:bg-panel-50 transition-colors duration-150 cursor-pointer group"
             >
               <div className="flex items-start gap-4">
                 {/* Icon */}
                 <div className="flex-shrink-0 mt-1">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${c.statusCorresp === 'RECEBIDO' ? 'bg-green-100' :
-                      c.statusCorresp === 'AVISADA' ? 'bg-yellow-100' :
-                        c.statusCorresp === 'DEVOLVIDA' ? 'bg-red-100' :
-                          c.statusCorresp === 'USO_INDEVIDO' ? 'bg-purple-100' :
-                            'bg-blue-100'
+                    c.statusCorresp === 'AVISADA' ? 'bg-yellow-100' :
+                      c.statusCorresp === 'DEVOLVIDA' ? 'bg-red-100' :
+                        c.statusCorresp === 'USO_INDEVIDO' ? 'bg-purple-100' :
+                          'bg-blue-100'
                     }`}>
                     <Building className={`w-5 h-5 ${c.statusCorresp === 'RECEBIDO' ? 'text-green-600' :
-                        c.statusCorresp === 'AVISADA' ? 'text-yellow-600' :
-                          c.statusCorresp === 'DEVOLVIDA' ? 'text-red-600' :
-                            c.statusCorresp === 'USO_INDEVIDO' ? 'text-purple-600' :
-                              'text-blue-600'
+                      c.statusCorresp === 'AVISADA' ? 'text-yellow-600' :
+                        c.statusCorresp === 'DEVOLVIDA' ? 'text-red-600' :
+                          c.statusCorresp === 'USO_INDEVIDO' ? 'text-purple-600' :
+                            'text-blue-600'
                       }`} />
                   </div>
                 </div>
@@ -727,7 +727,7 @@ export const CorrespondenceManager: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   {/* Line 1: Company name */}
                   <div className="flex items-center justify-between gap-4 mb-1">
-                    <h3 className="text-base font-semibold text-gray-900 truncate">
+                    <h3 className="text-base font-semibold text-ink-900 truncate">
                       {c.nomeEmpresaConexa}
                     </h3>
                     {/* Action buttons - visible on hover */}
@@ -761,9 +761,9 @@ export const CorrespondenceManager: React.FC = () => {
                   </div>
 
                   {/* Line 2: Sender, date, status */}
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-ink-500">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-400" />
+                      <User className="w-4 h-4 text-ink-400" />
                       <span>{c.remetente}</span>
                     </div>
                     <span className="text-gray-400">•</span>

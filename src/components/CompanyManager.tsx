@@ -10,15 +10,15 @@ import { API_BASE } from '../service/api';
 export const CompanyManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [empresas, setEmpresas] = useState<any[]>([]);
-  
+
   // ESTADOS DE PAGINAÇÃO
   const [pageNumber, setPageNumber] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(20);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalElements, setTotalElements] = useState<number>(0);
   const [carregando, setCarregando] = useState<boolean>(false);
-  
-  
+
+
   const [aditivoEmpresa, setAditivoEmpresa] = useState<any | null>(null);
   const [aditivoForm, setAditivoForm] = useState({
     unidadeNome: '',
@@ -37,7 +37,7 @@ export const CompanyManager: React.FC = () => {
   const [erroUnidades, setErroUnidades] = useState<string | null>(null);
   const [criandoAditivo, setCriandoAditivo] = useState(false);
   const [statusAditivo, setStatusAditivo] = useState<string | null>(null);
-  
+
   // ESTADOS PARA MODAL DE NOVA EMPRESA
   const [showNovaEmpresaModal, setShowNovaEmpresaModal] = useState(false);
   const [novaEmpresaNome, setNovaEmpresaNome] = useState('');
@@ -68,13 +68,13 @@ export const CompanyManager: React.FC = () => {
     try {
       const response = await buscarEmpresas(page, size);
       console.log('Resposta paginada:', response);
-      
+
       setEmpresas(response.content || []);
       setTotalPages(response.totalPages || 0);
       setTotalElements(response.totalElements || 0);
       setPageNumber(response.pageNumber || 0);
       setPageSize(response.pageSize || size);
-      
+
     } catch (error) {
       console.error('[CompanyManager] Erro ao buscar empresas:', error);
     } finally {
@@ -86,7 +86,7 @@ export const CompanyManager: React.FC = () => {
   const visualizarDetalhes = async (empresa: any) => {
     setShowDetalhesModal(true);
     setCarregandoDetalhes(true);
-    
+
     try {
       // Busca os detalhes completos da empresa
       const detalhes = await buscarEmpresaPorId(empresa.id);
@@ -116,15 +116,15 @@ export const CompanyManager: React.FC = () => {
 
     try {
       await criarEmpresaPorNome(novaEmpresaNome.trim());
-      
+
       setShowNovaEmpresaModal(false);
       setNovaEmpresaNome('');
       await buscarEmpresasList(0);
-      
-      window.dispatchEvent(new CustomEvent('empresaAtualizada', { 
-        detail: { entidade: 'Empresa', acao: 'CRIAR' } 
+
+      window.dispatchEvent(new CustomEvent('empresaAtualizada', {
+        detail: { entidade: 'Empresa', acao: 'CRIAR' }
       }));
-      
+
     } catch (error: any) {
       console.error('[CompanyManager] Erro ao criar empresa:', error);
       setErroCriacao(error?.message || 'Erro ao criar empresa');
@@ -199,10 +199,10 @@ export const CompanyManager: React.FC = () => {
 
   const abrirModalAditivo = (company: any) => {
     setAditivoEmpresa(company);
-    
+
     // CORREÇÃO: Agora puxa o CPF da empresa do banco de dados
     const cpfEmpresa = company.cnpj ? formatCpf(company.cnpj) : '';
-    
+
     const unidadeInicial = company.unidade ?? '';
     setAditivoForm({
       unidadeNome: unidadeInicial,
@@ -249,7 +249,7 @@ export const CompanyManager: React.FC = () => {
     if (digits.length === 11) return formatCpf(digits);
     if (digits.length === 14) return formatCnpj(digits);
     return valor;
-  } 
+  }
 
   const handleSubmitAditivo = async (evento: React.FormEvent) => {
     evento.preventDefault();
@@ -300,8 +300,7 @@ export const CompanyManager: React.FC = () => {
     } catch (err) {
       console.error('[handleSubmitAditivo] erro:', err);
       alert(
-        `Erro ao criar aditivo contratual: ${
-          err instanceof Error ? err.message : 'Erro desconhecido'
+        `Erro ao criar aditivo contratual: ${err instanceof Error ? err.message : 'Erro desconhecido'
         }`
       );
     } finally {
@@ -321,9 +320,9 @@ export const CompanyManager: React.FC = () => {
 
   const filteredEmpresas = Array.isArray(empresas)
     ? empresas.filter((company: any) => {
-        if (!searchTerm) return true;
-        return (company.nomeEmpresa || '').toLowerCase().includes(searchTerm.toLowerCase());
-      })
+      if (!searchTerm) return true;
+      return (company.nomeEmpresa || '').toLowerCase().includes(searchTerm.toLowerCase());
+    })
     : [];
 
   useEffect(() => {
@@ -348,7 +347,7 @@ export const CompanyManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Empresas</h2>
+          <h2 className="text-2xl font-bold text-ink-900">Empresas</h2>
           <p className="text-gray-600">
             {carregando ? 'Carregando...' : `${totalElements} empresa(s) encontrada(s)`}
           </p>
@@ -373,8 +372,8 @@ export const CompanyManager: React.FC = () => {
 
       {/* MODAL NOVA EMPRESA */}
       {showNovaEmpresaModal && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-ink-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-panel-200">
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Nova Empresa</h3>
             </div>
@@ -396,7 +395,7 @@ export const CompanyManager: React.FC = () => {
                   <p className="mt-2 text-sm text-red-600">{erroCriacao}</p>
                 )}
               </div>
-              
+
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
@@ -438,8 +437,8 @@ export const CompanyManager: React.FC = () => {
 
       {/* MODAL DE DETALHES */}
       {showDetalhesModal && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
+        <div className="fixed inset-0 bg-ink-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8 border border-panel-200">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">Detalhes da Empresa</h3>
               <button
@@ -451,7 +450,7 @@ export const CompanyManager: React.FC = () => {
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-6">
               {carregandoDetalhes ? (
                 <div className="flex justify-center items-center py-12">
@@ -485,7 +484,7 @@ export const CompanyManager: React.FC = () => {
                       <p className="text-gray-900">{empresaDetalhes.situacao || '-'}</p>
                     </div>
                   </div>
-                  
+
                   {empresaDetalhes.endereco && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
@@ -501,7 +500,7 @@ export const CompanyManager: React.FC = () => {
                       </p>
                     </div>
                   )}
-                  
+
                   {empresaDetalhes.mensagem && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Mensagem</label>
@@ -513,7 +512,7 @@ export const CompanyManager: React.FC = () => {
                 <p className="text-gray-500 text-center py-8">Não foi possível carregar os detalhes</p>
               )}
             </div>
-            
+
             <div className="p-6 border-t border-gray-200 flex justify-end">
               <button
                 onClick={fecharDetalhesModal}
@@ -539,7 +538,7 @@ export const CompanyManager: React.FC = () => {
               className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          
+
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Itens por página:</label>
@@ -599,22 +598,20 @@ export const CompanyManager: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            company.statusEmpresa === 'ATIVO' ? 'bg-green-100 text-green-800' :
-                            company.statusEmpresa === 'INATIVO' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${company.statusEmpresa === 'ATIVO' ? 'bg-green-100 text-green-800' :
+                              company.statusEmpresa === 'INATIVO' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                            }`}>
                             {company.statusEmpresa || 'Sem status'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {company.situacao && (
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              company.situacao === 'ADIMPLENTE' ? 'bg-blue-100 text-blue-800' :
-                              company.situacao === 'INADIMPLENTE' ? 'bg-red-100 text-red-800' :
-                              company.situacao === 'CPF' ? 'bg-purple-100 text-purple-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${company.situacao === 'ADIMPLENTE' ? 'bg-blue-100 text-blue-800' :
+                                company.situacao === 'INADIMPLENTE' ? 'bg-red-100 text-red-800' :
+                                  company.situacao === 'CPF' ? 'bg-purple-100 text-purple-800' :
+                                    'bg-gray-100 text-gray-800'
+                              }`}>
                               {company.situacao}
                             </span>
                           )}
@@ -634,7 +631,7 @@ export const CompanyManager: React.FC = () => {
                               <Eye className="w-3 h-3" />
                               Detalhes
                             </button>
-                            
+
                             {company.situacao === 'CPF' && (
                               <button
                                 onClick={() => abrirModalAditivo(company)}
@@ -645,7 +642,7 @@ export const CompanyManager: React.FC = () => {
                                 Aditivo
                               </button>
                             )}
-                            
+
                             <button
                               onClick={() => {
                                 if (window.confirm('Tem certeza que deseja deletar esta empresa?')) {
@@ -682,10 +679,10 @@ export const CompanyManager: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  Página {pageNumber + 1} de {totalPages} • 
+                  Página {pageNumber + 1} de {totalPages} •
                   Mostrando {empresas.length} de {totalElements} empresas
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePaginaAnterior}
@@ -694,11 +691,11 @@ export const CompanyManager: React.FC = () => {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  
+
                   <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium">
                     {pageNumber + 1}
                   </span>
-                  
+
                   <button
                     onClick={handleProximaPagina}
                     disabled={pageNumber >= totalPages - 1 || carregando}
@@ -715,8 +712,8 @@ export const CompanyManager: React.FC = () => {
 
       {/* Modal do Aditivo */}
       {aditivoEmpresa && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/20 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto border border-panel-200">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 z-10">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-semibold text-gray-900">
