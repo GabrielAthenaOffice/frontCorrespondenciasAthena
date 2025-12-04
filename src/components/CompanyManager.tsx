@@ -1,8 +1,8 @@
-// CompanyManager.tsx - VERSÃO COM TABELA E CORREÇÃO DO CPF
-import React, { useEffect, useState } from 'react';
-import { Search, Building, Plus, ChevronLeft, ChevronRight, Eye, Trash2, FileText, Edit3 } from 'lucide-react';
+// CompanyManager.tsx - VERSÃO COM TABELA COMPACTA E MENU DE AÇÕES
+import React, { useEffect, useState, useRef } from 'react';
+import { Search, Building, Plus, ChevronLeft, ChevronRight, Eye, Trash2, FileText, MoreVertical } from 'lucide-react';
 import { listarUnidades, buscarUnidade } from '../service/unidade';
-import { buscarEmpresas, alterarSituacaoEmpresa, criarEmpresaPorNome, buscarEmpresaPorId, buscarEmpresaPorNomeModeloAthena } from '../service/empresa';
+import { buscarEmpresas, criarEmpresaPorNome, buscarEmpresaPorId, buscarEmpresaPorNomeModeloAthena } from '../service/empresa';
 import { criarAditivo, baixarDocumentoAditivo } from '../service/aditivo';
 import { formatTelefone, formatCpf, formatCnpj } from '../service/empresa';
 import { apiFetch } from '../service/api';
@@ -17,6 +17,8 @@ export const CompanyManager: React.FC = () => {
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalElements, setTotalElements] = useState<number>(0);
   const [carregando, setCarregando] = useState<boolean>(false);
+  const [menuAberto, setMenuAberto] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
 
   const [aditivoEmpresa, setAditivoEmpresa] = useState<any | null>(null);
@@ -350,6 +352,17 @@ export const CompanyManager: React.FC = () => {
 
   const filteredEmpresas = empresas; // A filtragem agora é feita no backend
 
+  // Fecha o menu ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuAberto(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     carregarUnidades();
 
@@ -595,19 +608,13 @@ export const CompanyManager: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Nome
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status / Situação
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Situação
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mensagem
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                       Ações
                     </th>
                   </tr>
@@ -616,76 +623,92 @@ export const CompanyManager: React.FC = () => {
                   {filteredEmpresas.length > 0 ? (
                     filteredEmpresas.map((company: any) => (
                       <tr key={company.customerId || company.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3">
                           <div className="text-sm font-medium text-gray-900">
                             {company.nomeEmpresa || 'Sem nome'}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${company.statusEmpresa === 'ATIVO' ? 'bg-green-100 text-green-800' :
-                            company.statusEmpresa === 'INATIVO' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                            {company.statusEmpresa || 'Sem status'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {company.situacao && (
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${company.situacao === 'ADIMPLENTE' ? 'bg-blue-100 text-blue-800' :
-                              company.situacao === 'INADIMPLENTE' ? 'bg-red-100 text-red-800' :
-                                company.situacao === 'CPF' ? 'bg-purple-100 text-purple-800' :
-                                  'bg-gray-100 text-gray-800'
-                              }`}>
-                              {company.situacao}
-                            </span>
+                          {company.mensagem && (
+                            <div className="text-xs text-gray-500 truncate max-w-xs" title={company.mensagem}>
+                              {company.mensagem}
+                            </div>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600 max-w-xs truncate" title={company.mensagem}>
-                            {company.mensagem || '-'}
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${company.statusEmpresa === 'ATIVO' ? 'bg-green-100 text-green-800' :
+                                company.statusEmpresa === 'INATIVO' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                              }`}>
+                              {company.statusEmpresa || 'Sem status'}
+                            </span>
+                            {company.situacao && (
+                              <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${company.situacao === 'ADIMPLENTE' ? 'bg-blue-100 text-blue-800' :
+                                  company.situacao === 'INADIMPLENTE' ? 'bg-red-100 text-red-800' :
+                                    company.situacao === 'CPF' ? 'bg-purple-100 text-purple-800' :
+                                      'bg-gray-100 text-gray-800'
+                                }`}>
+                                {company.situacao}
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
+                        <td className="px-4 py-3 text-right">
+                          <div className="relative" ref={menuAberto === company.id ? menuRef : null}>
                             <button
-                              onClick={() => visualizarDetalhes(company)}
-                              className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs"
-                              title="Ver detalhes completos"
+                              onClick={() => setMenuAberto(menuAberto === company.id ? null : company.id)}
+                              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Opções"
                             >
-                              <Eye className="w-3 h-3" />
-                              Detalhes
+                              <MoreVertical className="w-4 h-4 text-gray-600" />
                             </button>
 
-                            {company.situacao === 'CPF' && (
-                              <button
-                                onClick={() => abrirModalAditivo(company)}
-                                className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs"
-                                title="Criar aditivo contratual"
-                              >
-                                <FileText className="w-3 h-3" />
-                                Aditivo
-                              </button>
+                            {menuAberto === company.id && (
+                              <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                <button
+                                  onClick={() => {
+                                    visualizarDetalhes(company);
+                                    setMenuAberto(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                  <Eye className="w-4 h-4 text-blue-600" />
+                                  Ver detalhes
+                                </button>
+
+                                {company.situacao === 'CPF' && (
+                                  <button
+                                    onClick={() => {
+                                      abrirModalAditivo(company);
+                                      setMenuAberto(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                  >
+                                    <FileText className="w-4 h-4 text-purple-600" />
+                                    Criar aditivo
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm('Tem certeza que deseja deletar esta empresa?')) {
+                                      deletarEmpresa(company.id);
+                                    }
+                                    setMenuAberto(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Excluir
+                                </button>
+                              </div>
                             )}
-
-                            <button
-                              onClick={() => {
-                                if (window.confirm('Tem certeza que deseja deletar esta empresa?')) {
-                                  deletarEmpresa(company.id);
-                                }
-                              }}
-                              className="flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs"
-                              title="Deletar empresa"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              Excluir
-                            </button>
                           </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center">
+                      <td colSpan={3} className="px-4 py-12 text-center">
                         <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">
                           {searchTerm ? 'Nenhuma empresa encontrada' : 'Nenhuma empresa cadastrada'}
