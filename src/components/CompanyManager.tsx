@@ -5,7 +5,7 @@ import { listarUnidades, buscarUnidade } from '../service/unidade';
 import { buscarEmpresas, alterarSituacaoEmpresa, criarEmpresaPorNome, buscarEmpresaPorId, buscarEmpresaPorNomeModeloAthena } from '../service/empresa';
 import { criarAditivo, baixarDocumentoAditivo } from '../service/aditivo';
 import { formatTelefone, formatCpf, formatCnpj } from '../service/empresa';
-import { API_BASE } from '../service/api';
+import { apiFetch } from '../service/api';
 
 export const CompanyManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -335,9 +335,15 @@ export const CompanyManager: React.FC = () => {
 
   const deletarEmpresa = async (id: number) => {
     try {
-      await fetch(`${API_BASE}/api/empresas/${id}`, { method: 'DELETE' });
+      const response = await apiFetch(`/api/empresas/${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error(`[deletarEmpresa] HTTP ${response.status}: ${errorText}`);
+        throw new Error(`Erro ao deletar empresa (${response.status})`);
+      }
       await buscarEmpresasList(pageNumber);
     } catch (err) {
+      console.error('[deletarEmpresa] Error:', err);
       alert('Erro ao deletar empresa');
     }
   };
