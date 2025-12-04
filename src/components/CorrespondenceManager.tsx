@@ -453,11 +453,11 @@ export const CorrespondenceManager: React.FC = () => {
       {/* NOVO MODAL PARA ALTERAR STATUS */}
       {showStatusModal && selectedCorrespondence && (
         <div className="fixed inset-0 bg-ink-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-panel-200">
-            <div className="p-6 border-b border-panel-100">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full border border-panel-200 max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-panel-100 flex-shrink-0">
               <h3 className="text-lg font-semibold text-ink-900">Alterar Status da Correspondência</h3>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-2">Correspondência</label>
                 <div className="bg-panel-50 p-3 rounded-lg text-ink-700 border border-panel-200">
