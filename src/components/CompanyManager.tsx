@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Building, Plus, ChevronLeft, ChevronRight, Eye, Trash2, FileText, Edit3 } from 'lucide-react';
 import { listarUnidades, buscarUnidade } from '../service/unidade';
-import { buscarEmpresas, alterarSituacaoEmpresa, criarEmpresaPorNome, buscarEmpresaPorId } from '../service/empresa';
+import { buscarEmpresas, alterarSituacaoEmpresa, criarEmpresaPorNome, buscarEmpresaPorId, buscarEmpresaPorNomeModeloAthena } from '../service/empresa';
 import { criarAditivo, baixarDocumentoAditivo } from '../service/aditivo';
 import { formatTelefone, formatCpf, formatCnpj } from '../service/empresa';
 import { API_BASE } from '../service/api';
@@ -66,21 +66,45 @@ export const CompanyManager: React.FC = () => {
   const buscarEmpresasList = async (page: number = pageNumber, size: number = pageSize) => {
     setCarregando(true);
     try {
-      const response = await buscarEmpresas(page, size);
-      console.log('Resposta paginada:', response);
+      // Se houver termo de busca, usa a busca por nome
+      if (searchTerm.trim()) {
+        const empresasEncontradas = await buscarEmpresaPorNomeModeloAthena(searchTerm.trim());
+        setEmpresas(empresasEncontradas);
+        setTotalElements(empresasEncontradas.length);
+        setTotalPages(1);
+        setPageNumber(0);
+      } else {
+        // Caso contrário, usa a paginação padrão
+        const response = await buscarEmpresas(page, size);
+        console.log('Resposta paginada:', response);
 
-      setEmpresas(response.content || []);
-      setTotalPages(response.totalPages || 0);
-      setTotalElements(response.totalElements || 0);
-      setPageNumber(response.pageNumber || 0);
-      setPageSize(response.pageSize || size);
-
+        setEmpresas(response.content || []);
+        setTotalPages(response.totalPages || 0);
+        setTotalElements(response.totalElements || 0);
+        setPageNumber(response.pageNumber || 0);
+        setPageSize(response.pageSize || size);
+      }
     } catch (error) {
       console.error('[CompanyManager] Erro ao buscar empresas:', error);
+      // Se der erro na busca por nome (ex: 404), limpa a lista
+      if (searchTerm.trim()) {
+        setEmpresas([]);
+        setTotalElements(0);
+        setTotalPages(0);
+      }
     } finally {
       setCarregando(false);
     }
   };
+
+  // Efeito para debouncing da busca
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      buscarEmpresasList(0);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
   // NOVA FUNÇÃO PARA VISUALIZAR DETALHES
   const visualizarDetalhes = async (empresa: any) => {
@@ -318,15 +342,9 @@ export const CompanyManager: React.FC = () => {
     }
   };
 
-  const filteredEmpresas = Array.isArray(empresas)
-    ? empresas.filter((company: any) => {
-      if (!searchTerm) return true;
-      return (company.nomeEmpresa || '').toLowerCase().includes(searchTerm.toLowerCase());
-    })
-    : [];
+  const filteredEmpresas = empresas; // A filtragem agora é feita no backend
 
   useEffect(() => {
-    buscarEmpresasList();
     carregarUnidades();
 
     const handler = () => {
@@ -599,8 +617,8 @@ export const CompanyManager: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${company.statusEmpresa === 'ATIVO' ? 'bg-green-100 text-green-800' :
-                              company.statusEmpresa === 'INATIVO' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
+                            company.statusEmpresa === 'INATIVO' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
                             }`}>
                             {company.statusEmpresa || 'Sem status'}
                           </span>
@@ -608,9 +626,9 @@ export const CompanyManager: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {company.situacao && (
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${company.situacao === 'ADIMPLENTE' ? 'bg-blue-100 text-blue-800' :
-                                company.situacao === 'INADIMPLENTE' ? 'bg-red-100 text-red-800' :
-                                  company.situacao === 'CPF' ? 'bg-purple-100 text-purple-800' :
-                                    'bg-gray-100 text-gray-800'
+                              company.situacao === 'INADIMPLENTE' ? 'bg-red-100 text-red-800' :
+                                company.situacao === 'CPF' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-gray-100 text-gray-800'
                               }`}>
                               {company.situacao}
                             </span>

@@ -89,7 +89,7 @@ export function formatCpf(cpf: string | null | undefined): string {
     if (!cpf) return '';
     const digits = cpf.replace(/\D/g, '');
     if (digits.length !== 11) return cpf;
-    return `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
 // Formata CNPJ: 00.000.000/0000-00
@@ -97,7 +97,7 @@ export function formatCnpj(cnpj: string | null | undefined): string {
     if (!cnpj) return '';
     const digits = cnpj.replace(/\D/g, '');
     if (digits.length !== 14) return cnpj;
-    return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`;
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
 }
 
 function mapCustomerToCompany(customer: RawCompanyPayload | undefined): Company {
@@ -154,10 +154,10 @@ export function formatTelefone(telefone: string | null): string {
     const digits = telefone.replace(/\D/g, '');
     if (digits.length === 11) {
         // Celular: (XX) XXXXX-XXXX
-        return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
     } else if (digits.length === 10) {
         // Fixo: (XX) XXXX-XXXX
-        return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
     }
     return telefone; // Retorna como está se não bater com os padrões
 }
@@ -278,7 +278,7 @@ export async function buscarEmpresas(pageNumber: number = 0, pageSize: number = 
             console.error(`[buscarEmpresas] CONEXA HTTP ${resp2.status}: ${errorText}`);
             throw new Error(`Erro ao buscar empresas CONEXA (${resp2.status})`);
         }
-        
+
         const json2 = await resp2.json();
         if (isConexaPage(json2)) {
             return createCompanyPage(json2.data ?? [], pageSize, {
@@ -367,13 +367,13 @@ const fetchTodasEmpresasConexa = async (pageSize: number): Promise<CompanyPage> 
 
 // Ajuda: lida com Optional do Spring no JSON
 function unwrapOptionalPayload<T = any>(payload: any): T | null {
-  if (payload == null) return null;
-  if (typeof payload === 'object') {
-    if ('value' in payload) return (payload as any).value ?? null;      // { value: {...} }
-    if ('present' in payload && payload.present === false) return null;  // { present:false }
-    if ('empty' in payload && payload.empty === true) return null;       // { empty:true }
-  }
-  return payload as T; // já é o objeto
+    if (payload == null) return null;
+    if (typeof payload === 'object') {
+        if ('value' in payload) return (payload as any).value ?? null;      // { value: {...} }
+        if ('present' in payload && payload.present === false) return null;  // { present:false }
+        if ('empty' in payload && payload.empty === true) return null;       // { empty:true }
+    }
+    return payload as T; // já é o objeto
 }
 
 export async function buscarTodasEmpresas(pageSize: number = 50): Promise<CompanyPage> {
@@ -428,68 +428,93 @@ export async function buscarTodasEmpresas(pageSize: number = 50): Promise<Compan
 
 
 export async function criarEmpresaPorNome(nomeEmpresa: string): Promise<any> {
-  try {
-    const response = await apiFetch('/api/empresas/criar-por-nome', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nomeEmpresa }),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(`[criarEmpresaPorNome] HTTP ${response.status}: ${errorText}`);
-      
-      // Tratamento específico para códigos de status
-      if (response.status === 409) {
-        throw new Error('Empresa já cadastrada no sistema');
-      } else if (response.status === 404) {
-        throw new Error('Nenhuma empresa encontrada com esse nome');
-      } else {
-        throw new Error(`Erro ao criar empresa (${response.status})`);
-      }
+    try {
+        const response = await apiFetch('/api/empresas/criar-por-nome', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nomeEmpresa }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            console.error(`[criarEmpresaPorNome] HTTP ${response.status}: ${errorText}`);
+
+            // Tratamento específico para códigos de status
+            if (response.status === 409) {
+                throw new Error('Empresa já cadastrada no sistema');
+            } else if (response.status === 404) {
+                throw new Error('Nenhuma empresa encontrada com esse nome');
+            } else {
+                throw new Error(`Erro ao criar empresa (${response.status})`);
+            }
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('[criarEmpresaPorNome] Error:', error);
+        throw error instanceof Error ? error : new Error('Erro ao criar empresa');
     }
-    
-    return response.json();
-  } catch (error) {
-    console.error('[criarEmpresaPorNome] Error:', error);
-    throw error instanceof Error ? error : new Error('Erro ao criar empresa');
-  }
 }
 
 // service/empresa.ts - ADICIONAR ESTAS FUNÇÕES
 
 // Buscar empresa por ID (para detalhes)
 export async function buscarEmpresaPorId(id: number): Promise<Company | null> {
-  try {
-    const response = await apiFetch(`/api/empresas/athena/buscar-por-id/${id}`);
-    if (response.status === 404) return null;
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`Erro ao buscar empresa (${response.status}): ${errorText}`);
+    try {
+        const response = await apiFetch(`/api/empresas/athena/buscar-por-id/${id}`);
+        if (response.status === 404) return null;
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Erro ao buscar empresa (${response.status}): ${errorText}`);
+        }
+        const raw = await response.json().catch(() => null);
+        const unwrapped = unwrapOptionalPayload(raw);
+        return unwrapped ? mapCustomerToCompany(unwrapped) : null;
+    } catch (error) {
+        console.error('[buscarEmpresaPorId] Error:', error);
+        throw error instanceof Error ? error : new Error('Erro ao buscar empresa');
     }
-    const raw = await response.json().catch(() => null);
-    const unwrapped = unwrapOptionalPayload(raw);
-    return unwrapped ? mapCustomerToCompany(unwrapped) : null;
-  } catch (error) {
-    console.error('[buscarEmpresaPorId] Error:', error);
-    throw error instanceof Error ? error : new Error('Erro ao buscar empresa');
-  }
 }
 
 // Buscar empresa por nome (para detalhes)
 export async function buscarEmpresaPorNome(nome: string): Promise<Company | null> {
-  try {
-    const response = await apiFetch(`/api/empresas/athena/buscar-por-nome?nome=${encodeURIComponent(nome)}`);
-    if (response.status === 404) return null;
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`Erro ao buscar empresa (${response.status}): ${errorText}`);
+    try {
+        const response = await apiFetch(`/api/empresas/athena/buscar-por-nome?nome=${encodeURIComponent(nome)}`);
+        if (response.status === 404) return null;
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Erro ao buscar empresa (${response.status}): ${errorText}`);
+        }
+        const raw = await response.json().catch(() => null);
+        const unwrapped = unwrapOptionalPayload(raw);
+        return unwrapped ? mapCustomerToCompany(unwrapped) : null;
+    } catch (error) {
+        console.error('[buscarEmpresaPorNome] Error:', error);
+        throw error instanceof Error ? error : new Error('Erro ao buscar empresa');
     }
-    const raw = await response.json().catch(() => null);
-    const unwrapped = unwrapOptionalPayload(raw);
-    return unwrapped ? mapCustomerToCompany(unwrapped) : null;
-  } catch (error) {
-    console.error('[buscarEmpresaPorNome] Error:', error);
-    throw error instanceof Error ? error : new Error('Erro ao buscar empresa');
-  }
+}
+
+export async function buscarEmpresaPorNomeModeloAthena(nome: string): Promise<Company[]> {
+    try {
+        const response = await apiFetch(`/api/empresas/athena/buscar-por-nome?nome=${encodeURIComponent(nome)}`);
+
+        if (response.status === 404) {
+            return [];
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Erro ao buscar empresas por nome (${response.status}): ${errorText}`);
+        }
+
+        const rawList = await response.json();
+        if (!Array.isArray(rawList)) {
+            return [];
+        }
+
+        return rawList.map(mapCustomerToCompany);
+    } catch (error) {
+        console.error('[buscarEmpresaPorNomeModeloAthena] Error:', error);
+        throw error instanceof Error ? error : new Error('Erro ao buscar empresas por nome');
+    }
 }
